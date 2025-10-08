@@ -3,8 +3,8 @@ import { createClient } from "@/lib/supabase/server"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { CreateLessonForm } from "@/components/create-lesson-form"
 
-export default async function NewLessonPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export default async function NewLessonPage({ params }: { params: Promise<{ courseId: string }> }) {
+  const { courseId } = await params
   const supabase = await createClient()
 
   const {
@@ -24,7 +24,7 @@ export default async function NewLessonPage({ params }: { params: Promise<{ id: 
   const { data: course, error } = await supabase
     .from("courses")
     .select("*")
-    .eq("id", id)
+    .eq("id", courseId)
     .eq("instructor_id", user.id)
     .single()
 
@@ -33,7 +33,7 @@ export default async function NewLessonPage({ params }: { params: Promise<{ id: 
   }
 
   // Get current lesson count for order_index
-  const { count } = await supabase.from("lessons").select("*", { count: "exact", head: true }).eq("course_id", id)
+  const { count } = await supabase.from("lessons").select("*", { count: "exact", head: true }).eq("course_id", courseId)
 
   return (
     <DashboardLayout role="instructor" userName={profile.full_name}>
@@ -44,7 +44,7 @@ export default async function NewLessonPage({ params }: { params: Promise<{ id: 
             Course: <span className="font-medium">{course.title}</span>
           </p>
         </div>
-        <CreateLessonForm courseId={id} nextOrderIndex={(count || 0) + 1} />
+        <CreateLessonForm courseId={courseId} nextOrderIndex={(count || 0) + 1} />
       </div>
     </DashboardLayout>
   )

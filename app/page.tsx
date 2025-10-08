@@ -10,7 +10,7 @@ export default function HomePage() {
       <SiteHeader />
 
       {/* Announcement Bar */}
-      <div className="bg-primary text-primary-foreground py-3 text-center">
+      <div className="bg-primary text-primary-foreground py-3 text-center px-4 md:px-6">
         <p className="text-sm font-medium">
           🎓 New courses added! Start learning today with offline access.{" "}
           <Link href="/auth/signup" className="underline underline-offset-4 hover:no-underline">
@@ -23,7 +23,7 @@ export default function HomePage() {
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-gradient-to-br from-[#190482] via-[#7752FE] to-[#8E8FFA] text-white">
           <div className="absolute inset-0 bg-[url('/abstract-geometric-pattern.png')] opacity-10" />
-          <div className="container relative py-24 md:py-32">
+          <div className="container mx-auto px-4 md:px-6 relative py-24 md:py-32">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-8">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-sm font-medium">
@@ -99,7 +99,7 @@ export default function HomePage() {
 
         {/* Features Section */}
         <section id="features" className="py-24 md:py-32 bg-background">
-          <div className="container">
+          <div className="container mx-auto px-4 md:px-6">
             <div className="text-center max-w-3xl mx-auto mb-16">
               <h2 className="text-4xl md:text-5xl font-bold mb-4 text-balance">Everything You Need to Learn Offline</h2>
               <p className="text-xl text-muted-foreground text-pretty">
@@ -194,7 +194,7 @@ export default function HomePage() {
 
         {/* How It Works Section */}
         <section id="how-it-works" className="py-24 md:py-32 bg-muted/30">
-          <div className="container">
+          <div className="container mx-auto px-4 md:px-6">
             <div className="text-center max-w-3xl mx-auto mb-16">
               <h2 className="text-4xl md:text-5xl font-bold mb-4 text-balance">How GyanPath Works</h2>
               <p className="text-xl text-muted-foreground text-pretty">
@@ -255,7 +255,7 @@ export default function HomePage() {
 
         {/* Testimonials Section */}
         <section className="py-24 md:py-32 bg-background">
-          <div className="container">
+          <div className="container mx-auto px-4 md:px-6">
             <div className="text-center max-w-3xl mx-auto mb-16">
               <h2 className="text-4xl md:text-5xl font-bold mb-4 text-balance">What Our Learners Say</h2>
               <p className="text-xl text-muted-foreground text-pretty">
@@ -335,7 +335,7 @@ export default function HomePage() {
           id="contact"
           className="py-24 md:py-32 bg-gradient-to-br from-[#190482] via-[#7752FE] to-[#8E8FFA] text-white"
         >
-          <div className="container">
+          <div className="container mx-auto px-4 md:px-6">
             <div className="max-w-4xl mx-auto text-center space-y-8">
               <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-balance">
                 Ready to Start Your Learning Journey?

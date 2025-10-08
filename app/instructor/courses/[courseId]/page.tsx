@@ -8,8 +8,8 @@ import Link from "next/link"
 import { PublishCourseButton } from "@/components/publish-course-button"
 import type { Lesson } from "@/lib/types"
 
-export default async function CourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export default async function CourseDetailPage({ params }: { params: Promise<{ courseId: string }> }) {
+  const { courseId } = await params
   const supabase = await createClient()
 
   const {
@@ -29,7 +29,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
   const { data: course, error } = await supabase
     .from("courses")
     .select("*")
-    .eq("id", id)
+    .eq("id", courseId)
     .eq("instructor_id", user.id)
     .single()
 
@@ -41,7 +41,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
   const { data: lessons } = await supabase
     .from("lessons")
     .select("*")
-    .eq("course_id", id)
+    .eq("course_id", courseId)
     .order("order_index", { ascending: true })
 
   return (
@@ -69,7 +69,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
           <div className="flex gap-2">
             <PublishCourseButton courseId={course.id} isPublished={course.is_published} />
             <Button asChild className="bg-[#7752FE] hover:bg-[#190482]">
-              <Link href={`/instructor/courses/${id}/lessons/new`}>
+              <Link href={`/instructor/courses/${courseId}/lessons/new`}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Lesson
               </Link>
@@ -143,7 +143,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
                         {lesson.is_published ? "Published" : "Draft"}
                       </span>
                       <Button asChild variant="outline" size="sm">
-                        <Link href={`/instructor/courses/${id}/lessons/${lesson.id}`}>Edit</Link>
+                        <Link href={`/instructor/courses/${courseId}/lessons/${lesson.id}`}>Edit</Link>
                       </Button>
                     </div>
                   </div>
@@ -154,7 +154,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
                 <Video className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-4">No lessons yet</p>
                 <Button asChild className="bg-[#7752FE] hover:bg-[#190482]">
-                  <Link href={`/instructor/courses/${id}/lessons/new`}>
+                  <Link href={`/instructor/courses/${courseId}/lessons/new`}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Your First Lesson
                   </Link>

@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { EnrollButton } from "@/components/enroll-button"
 import { BookOpen, Clock, BarChart, Award } from "lucide-react"
 
-export default async function EnrollPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export default async function EnrollPage({ params }: { params: Promise<{ courseId: string }> }) {
+  const { courseId } = await params
   const supabase = await createClient()
 
   const {
@@ -31,7 +31,7 @@ export default async function EnrollPage({ params }: { params: Promise<{ id: str
       instructor:profiles!courses_instructor_id_fkey(full_name)
     `,
     )
-    .eq("id", id)
+    .eq("id", courseId)
     .eq("is_published", true)
     .single()
 
@@ -43,19 +43,19 @@ export default async function EnrollPage({ params }: { params: Promise<{ id: str
   const { data: enrollment } = await supabase
     .from("course_enrollments")
     .select("*")
-    .eq("course_id", id)
+    .eq("course_id", courseId)
     .eq("user_id", user.id)
     .single()
 
   if (enrollment) {
-    redirect(`/learner/courses/${id}`)
+    redirect(`/learner/courses/${courseId}`)
   }
 
   // Get lesson count
   const { count: lessonCount } = await supabase
     .from("lessons")
     .select("*", { count: "exact", head: true })
-    .eq("course_id", id)
+    .eq("course_id", courseId)
     .eq("is_published", true)
 
   return (

@@ -10,8 +10,8 @@ import { DownloadLessonButton } from "@/components/download-lesson-button"
 import { GenerateCertificateButton } from "@/components/generate-certificate-button"
 import type { Lesson } from "@/lib/types"
 
-export default async function CourseViewPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export default async function CourseViewPage({ params }: { params: Promise<{ courseId: string }> }) {
+  const { courseId } = await params
   const supabase = await createClient()
 
   const {
@@ -31,12 +31,12 @@ export default async function CourseViewPage({ params }: { params: Promise<{ id:
   const { data: enrollment } = await supabase
     .from("course_enrollments")
     .select("*")
-    .eq("course_id", id)
+    .eq("course_id", courseId)
     .eq("user_id", user.id)
     .single()
 
   if (!enrollment) {
-    redirect(`/learner/courses/${id}/enroll`)
+    redirect(`/learner/courses/${courseId}/enroll`)
   }
 
   // Get course details
@@ -48,7 +48,7 @@ export default async function CourseViewPage({ params }: { params: Promise<{ id:
       instructor:profiles!courses_instructor_id_fkey(full_name)
     `,
     )
-    .eq("id", id)
+    .eq("id", courseId)
     .single()
 
   if (error || !course) {
@@ -59,7 +59,7 @@ export default async function CourseViewPage({ params }: { params: Promise<{ id:
   const { data: lessons } = await supabase
     .from("lessons")
     .select("*")
-    .eq("course_id", id)
+    .eq("course_id", courseId)
     .eq("is_published", true)
     .order("order_index", { ascending: true })
 
@@ -77,7 +77,7 @@ export default async function CourseViewPage({ params }: { params: Promise<{ id:
     .from("certificates")
     .select("id")
     .eq("user_id", user.id)
-    .eq("course_id", id)
+    .eq("course_id", courseId)
     .single()
 
   return (
@@ -116,7 +116,7 @@ export default async function CourseViewPage({ params }: { params: Promise<{ id:
                       <Button className="bg-[#7752FE] hover:bg-[#190482]">View Certificate</Button>
                     </Link>
                   ) : (
-                    <GenerateCertificateButton courseId={id} isCompleted={isCompleted} />
+                    <GenerateCertificateButton courseId={courseId} isCompleted={isCompleted} />
                   )}
                 </div>
               </div>
@@ -166,7 +166,7 @@ export default async function CourseViewPage({ params }: { params: Promise<{ id:
                           <Circle className="w-5 h-5 text-muted-foreground" />
                         )}
                         <Button asChild size="sm" className="bg-[#7752FE] hover:bg-[#190482]">
-                          <Link href={`/learner/courses/${id}/lessons/${lesson.id}`}>
+                          <Link href={`/learner/courses/${courseId}/lessons/${lesson.id}`}>
                             <Play className="w-4 h-4 mr-1" />
                             {isCompleted ? "Review" : "Start"}
                           </Link>
