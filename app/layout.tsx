@@ -5,6 +5,7 @@ import "./globals.css"
 
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
 import { OfflineIndicator } from "@/components/offline-indicator"
+import { ThemeProvider } from "@/components/theme-provider"
 
 import { Inter, Geist, Geist_Mono, Source_Serif_4 } from 'next/font/google'
 
@@ -46,9 +47,11 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.jpg" />
       </head>
       <body>
-        {children}
-        <PWAInstallPrompt />
-        <OfflineIndicator />
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          {children}
+          <PWAInstallPrompt />
+          <OfflineIndicator />
+        </ThemeProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `

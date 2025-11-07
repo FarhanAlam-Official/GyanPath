@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { BookOpen, Menu, X } from "lucide-react"
 import { useState } from "react"
 
@@ -22,25 +23,25 @@ export function SiteHeader() {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
           <Link
-            href="#features"
+            href="/features"
             className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
           >
             Features
           </Link>
           <Link
-            href="#how-it-works"
+            href="/how-it-works"
             className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
           >
             How It Works
           </Link>
           <Link
-            href="#about"
+            href="/about"
             className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
           >
             About
           </Link>
           <Link
-            href="#contact"
+            href="/contact"
             className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
           >
             Contact
@@ -49,6 +50,7 @@ export function SiteHeader() {
 
         {/* Desktop Auth Buttons */}
         <div className="hidden md:flex items-center gap-3">
+          <ThemeToggle />
           <Button asChild variant="ghost" size="sm">
             <Link href="/auth/login">Sign In</Link>
           </Button>
@@ -57,10 +59,13 @@ export function SiteHeader() {
           </Button>
         </div>
 
-        {/* Mobile Menu Button */}
-        <button className="md:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">
-          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
+        {/* Mobile Theme Toggle and Menu Button */}
+        <div className="md:hidden flex items-center gap-2">
+          <ThemeToggle />
+          <button className="p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
@@ -68,28 +73,28 @@ export function SiteHeader() {
         <div className="md:hidden border-t bg-background">
           <nav className="container mx-auto px-4 md:px-6 py-4 flex flex-col gap-4">
             <Link
-              href="#features"
+              href="/features"
               className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Features
             </Link>
             <Link
-              href="#how-it-works"
+              href="/how-it-works"
               className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               How It Works
             </Link>
             <Link
-              href="#about"
+              href="/about"
               className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               About
             </Link>
             <Link
-              href="#contact"
+              href="/contact"
               className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
