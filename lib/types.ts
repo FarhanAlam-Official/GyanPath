@@ -42,6 +42,8 @@ export interface Course {
   difficulty_level?: DifficultyLevel
   is_published: boolean
   estimated_duration_hours?: number
+  average_rating?: number
+  ratings_count?: number
   created_at: string
   updated_at: string
 }
@@ -90,6 +92,11 @@ export interface Quiz {
   description_ne?: string
   passing_score: number
   is_published: boolean
+  time_limit_minutes?: number | null
+  shuffle_questions?: boolean
+  allow_retry?: boolean
+  retry_cooldown_hours?: number
+  show_explanations?: boolean
   created_at: string
   updated_at: string
 }
@@ -101,6 +108,8 @@ export interface QuizQuestion {
   question_text_ne?: string
   question_type: "multiple_choice" | "true_false"
   order_index: number
+  explanation?: string | null
+  explanation_ne?: string | null
   created_at: string
 }
 
@@ -121,6 +130,9 @@ export interface QuizAttempt {
   score: number
   total_questions: number
   passed: boolean
+  time_taken_seconds?: number | null
+  started_at?: string | null
+  can_retry_after?: string | null
   completed_at: string
 }
 
@@ -143,4 +155,54 @@ export interface Certificate {
   score: number
   created_at: string
   updated_at: string
+}
+
+export interface LessonComment {
+  id: string
+  lesson_id: string
+  user_id: string
+  parent_comment_id?: string | null
+  content: string
+  likes_count: number
+  is_helpful: boolean
+  is_pinned: boolean
+  created_at: string
+  updated_at: string
+  user?: Profile
+  replies?: LessonComment[]
+  user_liked?: boolean
+}
+
+export interface CommentLike {
+  id: string
+  comment_id: string
+  user_id: string
+  created_at: string
+}
+
+export interface CourseRating {
+  id: string
+  course_id: string
+  user_id: string
+  rating: number
+  review?: string | null
+  is_helpful_count: number
+  created_at: string
+  updated_at: string
+  user?: Profile
+  user_helpful?: boolean
+}
+
+export interface RatingHelpfulVote {
+  id: string
+  rating_id: string
+  user_id: string
+  created_at: string
+}
+
+// Utility types
+export type Nullable<T> = T | null
+export type Optional<T> = T | undefined
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
 }
