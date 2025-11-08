@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+import { createServerClient } from "@/lib/supabase/server"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { GroupList } from "@/components/group-list"
+import { CreateGroupForm } from "@/components/create-group-form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, TrendingUp } from "lucide-react"
 
 export default async function GroupAdminDashboard() {
-  const supabase = await createClient()
+  const supabase = await createServerClient()
 
   const {
     data: { user },
@@ -23,12 +25,25 @@ export default async function GroupAdminDashboard() {
   // Get groups managed by this admin
   const { data: groups } = await supabase.from("groups").select("*").eq("group_admin_id", user.id)
 
+  // Calculate total members across all groups
+  const groupIds = groups?.map((g) => g.id) || []
+  const { count: totalMembers } =
+    groupIds.length > 0
+      ? await supabase
+          .from("group_members")
+          .select("*", { count: "exact", head: true })
+          .in("group_id", groupIds)
+      : { count: 0 }
+
   return (
     <DashboardLayout role="group_admin" userName={profile.full_name}>
       <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-[#190482]">Group Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-2">Manage your groups and track member progress</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-[#190482]">Group Admin Dashboard</h1>
+            <p className="text-muted-foreground mt-2">Manage your groups and track member progress</p>
+          </div>
+          {profile.role === "admin" && <CreateGroupForm />}
         </div>
 
         {/* Stats Grid */}
@@ -50,7 +65,7 @@ export default async function GroupAdminDashboard() {
               <Users className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-[#7752FE]">0</div>
+              <div className="text-2xl font-bold text-[#7752FE]">{totalMembers || 0}</div>
               <p className="text-xs text-muted-foreground mt-1">Across all groups</p>
             </CardContent>
           </Card>
@@ -61,7 +76,7 @@ export default async function GroupAdminDashboard() {
               <TrendingUp className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-[#7752FE]">0%</div>
+              <div className="text-2xl font-bold text-[#7752FE]">--</div>
               <p className="text-xs text-muted-foreground mt-1">Group completion rate</p>
             </CardContent>
           </Card>
@@ -73,23 +88,7 @@ export default async function GroupAdminDashboard() {
             <CardTitle>Your Groups</CardTitle>
           </CardHeader>
           <CardContent>
-            {groups && groups.length > 0 ? (
-              <div className="space-y-4">
-                {groups.map((group) => (
-                  <div
-                    key={group.id}
-                    className="p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
-                  >
-                    <h3 className="font-semibold">{group.name}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">{group.description || "No description"}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center py-8">
-                No groups yet. Contact an admin to create groups.
-              </p>
-            )}
+            <GroupList />
           </CardContent>
         </Card>
       </div>

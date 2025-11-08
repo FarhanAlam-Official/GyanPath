@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+import { createServerClient } from "@/lib/supabase/server"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { AnalyticsInstructorStats } from "@/components/analytics-instructor-stats"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BookOpen, Video, Users, FileText } from "lucide-react"
 
 export default async function InstructorDashboard() {
-  const supabase = await createClient()
+  const supabase = await createServerClient()
 
   const {
     data: { user },
@@ -29,51 +30,7 @@ export default async function InstructorDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid md:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">My Courses</CardTitle>
-              <BookOpen className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#7752FE]">0</div>
-              <p className="text-xs text-muted-foreground mt-1">Courses created</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Lessons</CardTitle>
-              <Video className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#7752FE]">0</div>
-              <p className="text-xs text-muted-foreground mt-1">Lessons published</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Students</CardTitle>
-              <Users className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#7752FE]">0</div>
-              <p className="text-xs text-muted-foreground mt-1">Enrolled students</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Quizzes</CardTitle>
-              <FileText className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#7752FE]">0</div>
-              <p className="text-xs text-muted-foreground mt-1">Quizzes created</p>
-            </CardContent>
-          </Card>
-        </div>
+        <AnalyticsInstructorStats />
 
         {/* Quick Actions */}
         <Card>

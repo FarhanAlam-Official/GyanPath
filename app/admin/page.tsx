@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+import { createServerClient } from "@/lib/supabase/server"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { AnalyticsDashboardStats } from "@/components/analytics-dashboard-stats"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, BookOpen, Award, TrendingUp } from "lucide-react"
 
 export default async function AdminDashboard() {
-  const supabase = await createClient()
+  const supabase = await createServerClient()
 
   const {
     data: { user },
@@ -20,11 +21,6 @@ export default async function AdminDashboard() {
     redirect("/auth/login")
   }
 
-  // Get stats
-  const { count: usersCount } = await supabase.from("profiles").select("*", { count: "exact", head: true })
-
-  const { count: groupsCount } = await supabase.from("groups").select("*", { count: "exact", head: true })
-
   return (
     <DashboardLayout role="admin" userName={profile.full_name}>
       <div className="space-y-8">
@@ -34,51 +30,7 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <Users className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#7752FE]">{usersCount || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">Registered users</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Groups</CardTitle>
-              <Users className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#7752FE]">{groupsCount || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">Active groups</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
-              <BookOpen className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#7752FE]">0</div>
-              <p className="text-xs text-muted-foreground mt-1">Published courses</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Certificates Issued</CardTitle>
-              <Award className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#7752FE]">0</div>
-              <p className="text-xs text-muted-foreground mt-1">Total certificates</p>
-            </CardContent>
-          </Card>
-        </div>
+        <AnalyticsDashboardStats />
 
         {/* Quick Actions */}
         <Card>
