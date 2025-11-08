@@ -2,6 +2,8 @@ import { redirect, notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { LessonVideoPlayer } from "@/components/lesson-video-player"
+import { DownloadLessonButton } from "@/components/download-lesson-button"
+import { LessonComments } from "@/components/lesson-comments"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, ArrowRight } from "lucide-react"
@@ -73,6 +75,15 @@ export default async function LessonViewPage({
   const previousLesson = currentIndex > 0 ? allLessons?.[currentIndex - 1] : null
   const nextLesson = currentIndex < (allLessons?.length ?? 0) - 1 ? allLessons?.[currentIndex + 1] : null
 
+  // Check if user is instructor for this course
+  const { data: course } = await supabase
+    .from("courses")
+    .select("instructor_id")
+    .eq("id", courseId)
+    .single()
+
+  const isInstructor = course?.instructor_id === user.id
+
   return (
     <DashboardLayout role="learner" userName={profile.full_name}>
       <div className="max-w-6xl mx-auto space-y-6">
@@ -102,6 +113,21 @@ export default async function LessonViewPage({
           />
         )}
 
+        {/* Download for Offline */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold mb-2">Offline Access</h2>
+                <p className="text-sm text-muted-foreground">
+                  Download this lesson to access it offline
+                </p>
+              </div>
+              <DownloadLessonButton lessonId={lessonId} courseId={courseId} />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Lesson Content */}
         {lesson.pdf_url && (
           <Card>
@@ -115,6 +141,9 @@ export default async function LessonViewPage({
             </CardContent>
           </Card>
         )}
+
+        {/* Comments Section */}
+        <LessonComments lessonId={lessonId} currentUserId={user.id} isInstructor={isInstructor} />
 
         {/* Navigation */}
         <div className="flex justify-between items-center pt-6 border-t">
