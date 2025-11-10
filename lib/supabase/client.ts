@@ -5,33 +5,65 @@ export function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      auth: {
-        flowType: "pkce",
-        detectSessionInUrl: true,
-        persistSession: true,
-        storage: typeof window !== "undefined" ? window.localStorage : undefined,
-        storageKey: "sb-auth-token",
-        autoRefreshToken: true,
-        debug: process.env.NODE_ENV === "development",
+      cookies: {
+        getAll() {
+          // Only run in browser environment
+          if (typeof document === "undefined") {
+            return []
+          }
+
+          // Parse all cookies from document.cookie
+          return document.cookie
+            .split("; ")
+            .map((cookie) => {
+              const [name, ...valueParts] = cookie.split("=")
+              return {
+                name,
+                value: valueParts.join("="),
+              }
+            })
+            .filter((cookie) => cookie.name) // Filter out empty cookies
+        },
+        setAll(cookiesToSet) {
+          // Only run in browser environment
+          if (typeof document === "undefined") {
+            return
+          }
+
+          // Set all cookies in document.cookie
+          cookiesToSet.forEach(({ name, value, options }) => {
+            let cookie = `${name}=${value}`
+
+            if (options?.maxAge) {
+              cookie += `; max-age=${options.maxAge}`
+            }
+            if (options?.expires) {
+              cookie += `; expires=${options.expires.toUTCString()}`
+            }
+            if (options?.path) {
+              cookie += `; path=${options.path}`
+            } else {
+              cookie += "; path=/"
+            }
+            if (options?.domain) {
+              cookie += `; domain=${options.domain}`
+            }
+            if (options?.sameSite) {
+              cookie += `; samesite=${options.sameSite}`
+            }
+            if (options?.secure) {
+              cookie += "; secure"
+            }
+
+            document.cookie = cookie
+          })
+        },
       },
     }
   )
 }
 
-// Create a specialized client for password reset that doesn't use PKCE
+// Create a specialized client for password reset
 export function createPasswordResetClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      auth: {
-        flowType: "pkce", // Keep PKCE but handle recovery manually
-        detectSessionInUrl: true, // Allow detection but handle recovery differently
-        persistSession: true,
-        storage: typeof window !== "undefined" ? window.localStorage : undefined,
-        storageKey: "sb-auth-token", // Use same storage key
-        autoRefreshToken: true,
-      },
-    }
-  )
+  return createClient() // Use the same client
 }

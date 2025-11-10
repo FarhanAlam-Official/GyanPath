@@ -50,8 +50,49 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const publicPaths = ["/", "/auth", "/verify"]
-  const isPublicPath = publicPaths.some((path) => request.nextUrl.pathname.startsWith(path))
+  // Define public paths that don't require authentication
+  const publicPaths = [
+    "/",
+    "/auth/login",
+    "/auth/signup",
+    "/auth/verify",
+    "/auth/callback",
+    "/auth/forgot-password",
+    "/auth/reset-password",
+    "/features",
+    "/how-it-works",
+    "/about",
+    "/contact",
+    "/demo",
+  ]
+
+  // Check if it's a public static file or PWA resource
+  const isStaticFile =
+    request.nextUrl.pathname.startsWith("/_next") ||
+    request.nextUrl.pathname.startsWith("/api") ||
+    (request.nextUrl.pathname.includes(".") &&
+      (request.nextUrl.pathname.endsWith(".json") ||
+        request.nextUrl.pathname.endsWith(".ico") ||
+        request.nextUrl.pathname.endsWith(".png") ||
+        request.nextUrl.pathname.endsWith(".jpg") ||
+        request.nextUrl.pathname.endsWith(".jpeg") ||
+        request.nextUrl.pathname.endsWith(".svg") ||
+        request.nextUrl.pathname.endsWith(".webp") ||
+        request.nextUrl.pathname.endsWith(".js") ||
+        request.nextUrl.pathname.endsWith(".css") ||
+        request.nextUrl.pathname.endsWith(".woff") ||
+        request.nextUrl.pathname.endsWith(".woff2") ||
+        request.nextUrl.pathname.endsWith(".ttf") ||
+        request.nextUrl.pathname.endsWith(".eot")))
+
+  const isPublicPath = publicPaths.some(
+    (path) => request.nextUrl.pathname === path || request.nextUrl.pathname.startsWith(path + "/")
+  )
+
+  // Allow static files to pass through without authentication
+  if (isStaticFile) {
+    return supabaseResponse
+  }
 
   // Redirect unauthenticated users to login only for protected routes
   if (!user && !isPublicPath) {
