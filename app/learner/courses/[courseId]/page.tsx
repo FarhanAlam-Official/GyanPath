@@ -9,6 +9,9 @@ import Link from "next/link"
 import { DownloadLessonButton } from "@/components/download-lesson-button"
 import { GenerateCertificateButton } from "@/components/generate-certificate-button"
 import { CourseRating } from "@/components/course-rating"
+import { DiscussionForum } from "@/components/discussion-forum"
+import { AnnouncementBoard } from "@/components/announcement-board"
+import { CourseDownloadButton } from "@/components/course-download-button"
 import type { Lesson } from "@/lib/types"
 
 export default async function CourseViewPage({ params }: { params: Promise<{ courseId: string }> }) {
@@ -181,6 +184,22 @@ export default async function CourseViewPage({ params }: { params: Promise<{ cou
             )}
           </CardContent>
         </Card>
+
+        {/* Course Download */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Offline Access</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CourseDownloadButton courseId={courseId} courseTitle={course.title} />
+          </CardContent>
+        </Card>
+
+        {/* Announcements */}
+        <AnnouncementBoard courseId={courseId} canCreate={false} />
+
+        {/* Discussion Forum */}
+        <DiscussionForum courseId={courseId} canCreate={false} />
 
         {/* Course Ratings & Reviews */}
         <CourseRating

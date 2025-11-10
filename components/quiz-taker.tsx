@@ -8,8 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle, XCircle, Trophy, ArrowLeft, Clock, Eye, AlertCircle } from "lucide-react"
+import { CheckCircle, XCircle, Trophy, ArrowLeft, Clock, Eye, AlertCircle, WifiOff } from "lucide-react"
 import Link from "next/link"
+import { db } from "@/lib/offline/indexeddb"
+import { toast } from "sonner"
 import type { Quiz, QuizQuestion, QuizOption, QuizAttempt } from "@/lib/types"
 
 interface QuizTakerProps {
@@ -155,49 +157,85 @@ export function QuizTaker({ quiz, questions, previousAttempts, courseId, lessonI
       const passed = score >= quiz.passing_score
       const timeTaken = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0
 
-      // Calculate retry cooldown
-      const cooldownHours = quiz.retry_cooldown_hours || 24
-      const canRetryAfter = quiz.allow_retry
-        ? new Date(Date.now() + cooldownHours * 60 * 60 * 1000).toISOString()
-        : null
+      // Check if offline
+      const isOffline = !navigator.onLine
 
-      // Create attempt
-      const { data: attempt, error: attemptError } = await supabase
-        .from("quiz_attempts")
-        .insert({
-          quiz_id: quiz.id,
-          user_id: user.id,
-          score,
-          total_questions: shuffledQuestions.length,
-          passed,
-          time_taken_seconds: timeTaken,
-          started_at: startTime ? new Date(startTime).toISOString() : null,
-          can_retry_after: canRetryAfter,
+      if (isOffline) {
+        // Queue quiz attempt for offline sync
+        await db.addToQueue({
+          type: "quiz_attempt",
+          data: {
+            quiz_id: quiz.id,
+            user_id: user.id,
+            score,
+            total_questions: shuffledQuestions.length,
+            passed,
+            time_taken_seconds: timeTaken,
+            started_at: startTime ? new Date(startTime).toISOString() : null,
+            answers: answerDetails.map((a) => ({
+              question_id: a.questionId,
+              selected_option_id: a.selectedOptionId,
+              is_correct: a.isCorrect,
+            })),
+          },
         })
-        .select()
-        .single()
 
-      if (attemptError) throw attemptError
+        // Show result locally (will sync when online)
+        setResult({
+          score,
+          passed,
+          answerDetails,
+          attemptId: "offline-pending",
+          timeTaken,
+        })
 
-      // Save answers
-      for (const answer of answerDetails) {
-        await supabase.from("quiz_answers").insert({
-          attempt_id: attempt.id,
-          question_id: answer.questionId,
-          selected_option_id: answer.selectedOptionId,
-          is_correct: answer.isCorrect,
+        toast.success("Quiz submitted offline", "Your results will sync when you're back online")
+      } else {
+        // Calculate retry cooldown
+        const cooldownHours = quiz.retry_cooldown_hours || 24
+        const canRetryAfter = quiz.allow_retry
+          ? new Date(Date.now() + cooldownHours * 60 * 60 * 1000).toISOString()
+          : null
+
+        // Create attempt
+        const { data: attempt, error: attemptError } = await supabase
+          .from("quiz_attempts")
+          .insert({
+            quiz_id: quiz.id,
+            user_id: user.id,
+            score,
+            total_questions: shuffledQuestions.length,
+            passed,
+            time_taken_seconds: timeTaken,
+            started_at: startTime ? new Date(startTime).toISOString() : null,
+            can_retry_after: canRetryAfter,
+          })
+          .select()
+          .single()
+
+        if (attemptError) throw attemptError
+
+        // Save answers
+        for (const answer of answerDetails) {
+          await supabase.from("quiz_answers").insert({
+            attempt_id: attempt.id,
+            question_id: answer.questionId,
+            selected_option_id: answer.selectedOptionId,
+            is_correct: answer.isCorrect,
+          })
+        }
+
+        setResult({
+          score,
+          passed,
+          answerDetails,
+          attemptId: attempt.id,
+          timeTaken,
         })
       }
-
-      setResult({
-        score,
-        passed,
-        answerDetails,
-        attemptId: attempt.id,
-        timeTaken,
-      })
     } catch (error) {
       console.error("Failed to submit quiz:", error)
+      toast.error("Failed to submit quiz", error instanceof Error ? error.message : "Unknown error")
     } finally {
       setIsSubmitting(false)
     }

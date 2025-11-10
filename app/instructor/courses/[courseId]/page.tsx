@@ -3,9 +3,10 @@ import { createClient } from "@/lib/supabase/server"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Video, FileText } from "lucide-react"
+import { Plus, Video, FileText, Eye } from "lucide-react"
 import Link from "next/link"
 import { PublishCourseButton } from "@/components/publish-course-button"
+import { LessonReorder } from "@/components/lesson-reorder"
 import type { Lesson } from "@/lib/types"
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ courseId: string }> }) {
@@ -68,6 +69,15 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
           </div>
           <div className="flex gap-2">
             <PublishCourseButton courseId={course.id} isPublished={course.is_published} />
+            <Button asChild variant="outline">
+              <Link href={`/instructor/courses/${courseId}/edit`}>Edit Course</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href={`/instructor/courses/${courseId}/preview`}>
+                <Eye className="w-4 h-4 mr-2" />
+                Preview
+              </Link>
+            </Button>
             <Button asChild className="bg-[#7752FE] hover:bg-[#190482]">
               <Link href={`/instructor/courses/${courseId}/lessons/new`}>
                 <Plus className="w-4 h-4 mr-2" />
@@ -163,6 +173,11 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ c
             )}
           </CardContent>
         </Card>
+
+        {/* Lesson Reorder */}
+        {lessons && lessons.length > 0 && (
+          <LessonReorder lessons={lessons} courseId={courseId} />
+        )}
       </div>
     </DashboardLayout>
   )
