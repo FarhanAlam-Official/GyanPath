@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
@@ -15,6 +17,7 @@ import {
   Star
 } from "lucide-react"
 import Link from "next/link"
+import { motion } from "framer-motion"
 
 export default function AboutPage() {
   const values = [
@@ -108,14 +111,20 @@ export default function AboutPage() {
         {/* Hero Section */}
         <section className="py-24 md:py-32 bg-gradient-to-br from-[#190482] via-[#7752FE] to-[#8E8FFA] text-white">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="max-w-4xl mx-auto text-center space-y-8">
+            <motion.div 
+              className="max-w-4xl mx-auto text-center space-y-8"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.6 }}
+            >
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
                 About GyanPath
               </h1>
               <p className="text-xl md:text-2xl text-white/90 leading-relaxed">
                 Empowering rural communities through accessible, offline-first education. Learn our story and mission.
               </p>
-            </div>
+            </motion.div>
           </div>
         </section>
 
@@ -123,7 +132,13 @@ export default function AboutPage() {
         <section className="py-24 md:py-32 bg-background">
           <div className="container mx-auto px-4 md:px-6">
             <div className="max-w-6xl mx-auto">
-              <div className="grid md:grid-cols-2 gap-16 items-center">
+              <motion.div 
+                className="grid md:grid-cols-2 gap-16 items-center"
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.5 }}
+              >
                 <div className="space-y-8">
                   <h2 className="text-4xl md:text-5xl font-bold">Our Mission</h2>
                   <p className="text-lg text-muted-foreground leading-relaxed">
@@ -144,11 +159,15 @@ export default function AboutPage() {
                   </Button>
                 </div>
                 <div className="relative">
-                  <div className="aspect-square bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl flex items-center justify-center">
+                  <motion.div 
+                    className="aspect-square bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl flex items-center justify-center"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ type: "spring", stiffness: 250, damping: 18 }}
+                  >
                     <BookOpen className="w-32 h-32 text-primary" />
-                  </div>
+                  </motion.div>
                 </div>
-              </div>
+              </motion.div>
             </div>
           </div>
         </section>
@@ -165,11 +184,18 @@ export default function AboutPage() {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
               {stats.map((stat, index) => (
-                <div key={index} className="text-center space-y-3">
+                <motion.div 
+                  key={index} 
+                  className="text-center space-y-3"
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.45, delay: index * 0.06 }}
+                >
                   <div className="text-5xl md:text-6xl font-bold text-primary">{stat.number}</div>
                   <div className="text-xl font-semibold">{stat.label}</div>
                   <div className="text-muted-foreground">{stat.description}</div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
@@ -189,13 +215,21 @@ export default function AboutPage() {
               {values.map((value, index) => {
                 const IconComponent = value.icon
                 return (
-                  <div key={index} className="p-8 rounded-2xl border bg-card hover:shadow-lg transition-all">
+                  <motion.div 
+                    key={index} 
+                    className="p-8 rounded-2xl border bg-card hover:shadow-lg transition-all group"
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.2 }}
+                    transition={{ duration: 0.45, delay: index * 0.06 }}
+                    whileHover={{ y: -4 }}
+                  >
                     <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
-                      <IconComponent className="w-8 h-8 text-primary" />
+                      <IconComponent className="w-8 h-8 text-primary transition-transform group-hover:scale-110" />
                     </div>
                     <h3 className="text-xl font-semibold mb-3">{value.title}</h3>
                     <p className="text-muted-foreground leading-relaxed">{value.description}</p>
-                  </div>
+                  </motion.div>
                 )
               })}
             </div>

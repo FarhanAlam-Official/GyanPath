@@ -5,25 +5,43 @@ import { AnalyticsUserStats } from "@/components/analytics-user-stats"
 import { CourseRecommendations } from "@/components/course-recommendations"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BookOpen, Award, TrendingUp, Clock } from "lucide-react"
+import { BookOpen } from "lucide-react"
 import Link from "next/link"
 
 export default async function LearnerDashboard() {
+  // eslint-disable-next-line no-console
+  console.log("[LEARNER PAGE] Starting to render learner dashboard")
   const supabase = await createServerClient()
 
+  // eslint-disable-next-line no-console
+  console.log("[LEARNER PAGE] Getting user from server client...")
   const {
     data: { user },
   } = await supabase.auth.getUser()
+  
+  // eslint-disable-next-line no-console
+  console.log("[LEARNER PAGE] User check result:", { hasUser: !!user, userId: user?.id })
+  
   if (!user) {
+    // eslint-disable-next-line no-console
+    console.log("[LEARNER PAGE] No user found, redirecting to login")
     redirect("/auth/login")
   }
 
+  // eslint-disable-next-line no-console
+  console.log("[LEARNER PAGE] Fetching user profile...")
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+  // eslint-disable-next-line no-console
+  console.log("[LEARNER PAGE] Profile result:", { hasProfile: !!profile, role: profile?.role })
 
   if (!profile || profile.role !== "learner") {
+    // eslint-disable-next-line no-console
+    console.log("[LEARNER PAGE] Invalid profile or role, redirecting to login")
     redirect("/auth/login")
   }
 
+  // eslint-disable-next-line no-console
+  console.log("[LEARNER PAGE] Fetching enrollment count...")
   const { count: enrolledCount } = await supabase
     .from("course_enrollments")
     .select("*", { count: "exact", head: true })
@@ -36,6 +54,9 @@ export default async function LearnerDashboard() {
     .eq("user_id", user.id)
 
   const enrolledCourseIds = enrollments?.map((e) => e.course_id) || []
+  
+  // eslint-disable-next-line no-console
+  console.log("[LEARNER PAGE] Rendering dashboard with data:", { enrolledCount, enrolledCourseIds: enrolledCourseIds.length })
 
   return (
     <DashboardLayout role="learner" userName={profile.full_name}>

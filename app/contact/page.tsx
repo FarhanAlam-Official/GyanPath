@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,6 +19,7 @@ import {
   Send
 } from "lucide-react"
 import Link from "next/link"
+import { motion } from "framer-motion"
 
 export default function ContactPage() {
   const contactMethods = [
@@ -104,14 +107,20 @@ export default function ContactPage() {
         {/* Hero Section */}
         <section className="py-24 md:py-32 bg-gradient-to-br from-[#190482] via-[#7752FE] to-[#8E8FFA] text-white">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="max-w-4xl mx-auto text-center space-y-8">
+            <motion.div 
+              className="max-w-4xl mx-auto text-center space-y-8"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.6 }}
+            >
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
                 Get in Touch
               </h1>
               <p className="text-xl md:text-2xl text-white/90 leading-relaxed">
                 Have questions? Need support? Want to partner with us? We'd love to hear from you.
               </p>
-            </div>
+            </motion.div>
           </div>
         </section>
 
@@ -129,9 +138,17 @@ export default function ContactPage() {
               {contactMethods.map((method, index) => {
                 const IconComponent = method.icon
                 return (
-                  <div key={index} className="p-6 rounded-2xl border bg-card hover:shadow-lg transition-all text-center">
+                  <motion.div 
+                    key={index} 
+                    className="p-6 rounded-2xl border bg-card hover:shadow-lg transition-all text-center group"
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.2 }}
+                    transition={{ duration: 0.45, delay: index * 0.06 }}
+                    whileHover={{ y: -4 }}
+                  >
                     <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                      <IconComponent className="w-8 h-8 text-primary" />
+                      <IconComponent className="w-8 h-8 text-primary transition-transform group-hover:scale-110" />
                     </div>
                     <h3 className="text-xl font-semibold mb-2">{method.title}</h3>
                     <p className="text-sm text-muted-foreground mb-3">{method.description}</p>
@@ -145,7 +162,7 @@ export default function ContactPage() {
                     ) : (
                       <p className="text-primary font-medium">{method.value}</p>
                     )}
-                  </div>
+                  </motion.div>
                 )
               })}
             </div>
@@ -212,15 +229,23 @@ export default function ContactPage() {
                   {supportTypes.map((type, index) => {
                     const IconComponent = type.icon
                     return (
-                      <div key={index} className="flex gap-4 p-4 rounded-xl border bg-card">
+                      <motion.div 
+                        key={index} 
+                        className="flex gap-4 p-4 rounded-xl border bg-card group"
+                        initial={{ opacity: 0, y: 16 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, amount: 0.2 }}
+                        transition={{ duration: 0.45, delay: index * 0.05 }}
+                        whileHover={{ y: -2 }}
+                      >
                         <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <IconComponent className="w-6 h-6 text-primary" />
+                          <IconComponent className="w-6 h-6 text-primary transition-transform group-hover:scale-110" />
                         </div>
                         <div>
                           <h3 className="font-semibold mb-2">{type.title}</h3>
                           <p className="text-sm text-muted-foreground">{type.description}</p>
                         </div>
-                      </div>
+                      </motion.div>
                     )
                   })}
                 </div>
@@ -253,10 +278,17 @@ export default function ContactPage() {
 
               <div className="space-y-6">
                 {faqs.map((faq, index) => (
-                  <div key={index} className="p-6 rounded-xl border bg-card">
+                  <motion.div 
+                    key={index} 
+                    className="p-6 rounded-xl border bg-card"
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.2 }}
+                    transition={{ duration: 0.45, delay: index * 0.05 }}
+                  >
                     <h3 className="text-lg font-semibold mb-3">{faq.question}</h3>
                     <p className="text-muted-foreground leading-relaxed">{faq.answer}</p>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
 

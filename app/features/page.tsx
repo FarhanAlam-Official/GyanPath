@@ -1,3 +1,6 @@
+"use client";
+
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
@@ -130,7 +133,13 @@ export default function FeaturesPage() {
         {/* Hero Section */}
         <section className="py-24 md:py-32 bg-gradient-to-br from-[#190482] via-[#7752FE] to-[#8E8FFA] text-white">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="max-w-4xl mx-auto text-center space-y-8">
+            <motion.div 
+              className="max-w-4xl mx-auto text-center space-y-8"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.6 }}
+            >
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
                 Powerful Features for Modern Learning
               </h1>
@@ -143,7 +152,7 @@ export default function FeaturesPage() {
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </Button>
-            </div>
+            </motion.div>
           </div>
         </section>
 
@@ -161,7 +170,15 @@ export default function FeaturesPage() {
               {features.map((feature, index) => {
                 const IconComponent = feature.icon
                 return (
-                  <div key={index} className="group p-6 rounded-2xl border bg-card hover:shadow-lg transition-all">
+                  <motion.div 
+                    key={index} 
+                    className="group p-6 rounded-2xl border bg-card hover:shadow-lg transition-all"
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.2 }}
+                    transition={{ duration: 0.45, delay: index * 0.05 }}
+                    whileHover={{ y: -4 }}
+                  >
                     <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-4 ${feature.color} transition-colors`}>
                       <IconComponent className="w-7 h-7" />
                     </div>
@@ -169,7 +186,7 @@ export default function FeaturesPage() {
                     <p className="text-muted-foreground leading-relaxed">
                       {feature.description}
                     </p>
-                  </div>
+                  </motion.div>
                 )
               })}
             </div>

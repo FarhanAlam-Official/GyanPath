@@ -7,6 +7,7 @@ import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
 import { OfflineIndicator } from "@/components/offline-indicator"
 import { ThemeProvider } from "@/components/theme-provider"
 import { QueryProvider } from "@/components/providers/query-provider"
+import { AuthProvider } from "@/lib/auth/context"
 import { Toaster } from "@/components/ui/sonner"
 
 import { Inter, Noto_Sans_Devanagari } from "next/font/google"
@@ -47,30 +48,33 @@ export default async function RootLayout({
     <html lang="en" className={`${inter.variable} ${notoSansDevanagari.variable} antialiased`}>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icon-192.jpg" />
+        <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/favicon/android-chrome-192x192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/favicon/android-chrome-512x512.png" />
+        <link rel="shortcut icon" href="/favicon/favicon.ico" />
       </head>
       <body>
         <QueryProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            {children}
-            <PWAInstallPrompt />
-            <OfflineIndicator />
-            <Toaster />
+            <AuthProvider>
+              {children}
+              <PWAInstallPrompt />
+              <OfflineIndicator />
+              <Toaster />
+            </AuthProvider>
           </ThemeProvider>
         </QueryProvider>
+        {/* Temporarily disable SW caching while debugging auth/reset flow */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/sw.js').then(
-                    (registration) => {
-                      console.log('[v0] Service Worker registered:', registration);
-                    },
-                    (error) => {
-                      console.error('[v0] Service Worker registration failed:', error);
-                    }
-                  );
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                  for (const reg of registrations) {
+                    reg.unregister().catch(() => {});
+                  }
                 });
               }
             `,

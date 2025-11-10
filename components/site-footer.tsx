@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { BookOpen, Facebook, Twitter, Instagram, Mail } from "lucide-react"
 
 export function SiteFooter() {
@@ -9,10 +10,15 @@ export function SiteFooter() {
           {/* Brand */}
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-primary">GyanPath</span>
+              <Image
+                src="/logo.png"
+                alt="GyanPath logo"
+                width={32}
+                height={32}
+                className="rounded-md"
+                priority
+              />
+              <span className="text-foreground">GyanPath</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Empowering rural communities through offline-first education. Learn anywhere, anytime.

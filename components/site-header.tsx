@@ -1,12 +1,13 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { BookOpen, Menu, X, LogOut } from "lucide-react"
-import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
+import { BookOpen, Menu, X, LogOut, Home } from "lucide-react"
+import { useState } from "react"
+import { useAuth } from "@/hooks/use-auth"
+import { usePathname, useRouter } from "next/navigation"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,82 +17,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { motion } from "framer-motion"
 
 export function SiteHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [profile, setProfile] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const { user, profile, loading, signOut } = useAuth()
   const router = useRouter()
-  const supabase = createClient()
-
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        // First check session to ensure we have the latest auth state
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (session?.user) {
-          setUser(session.user)
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", session.user.id)
-            .single()
-          setProfile(profileData)
-        } else {
-          // Also try getUser as fallback
-          const { data: { user } } = await supabase.auth.getUser()
-          if (user) {
-            setUser(user)
-            const { data: profileData } = await supabase
-              .from("profiles")
-              .select("*")
-              .eq("id", user.id)
-              .single()
-            setProfile(profileData)
-          } else {
-            setUser(null)
-            setProfile(null)
-          }
-        }
-      } catch (error) {
-        console.error("Error getting user:", error)
-        setUser(null)
-        setProfile(null)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    getUser()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        getUser()
-      } else {
-        setUser(null)
-        setProfile(null)
-        setLoading(false)
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [supabase])
+  const pathname = usePathname()
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    
-    // Clear session preference cookie and session preference
-    if (typeof window !== "undefined") {
-      document.cookie = `sb-session-preference=; path=/; max-age=0; SameSite=Lax`
-      localStorage.removeItem("rememberMe")
-      localStorage.removeItem("rememberedEmail")
-      const { clearSessionPreference } = await import("@/lib/auth/session")
-      clearSessionPreference()
-    }
-    router.push("/auth/login")
+    await signOut()
+    router.push("/")
   }
 
   const getDashboardPath = () => {
@@ -119,49 +55,68 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
       <div className="container mx-auto px-4 md:px-6 flex h-16 items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <BookOpen className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="text-primary">GyanPath</span>
-        </Link>
+        <motion.div whileHover={{ scale: 1.03 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
+          <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+            <Image
+              src="/logo.png"
+              alt="GyanPath logo"
+              width={32}
+              height={32}
+              className="rounded-md"
+              priority
+            />
+            <span className="text-foreground">GyanPath</span>
+          </Link>
+        </motion.div>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
-          <Link
-            href="/features"
-            className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-          >
-            Features
-          </Link>
-          <Link
-            href="/how-it-works"
-            className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-          >
-            How It Works
-          </Link>
-          <Link
-            href="/about"
-            className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-          >
-            About
-          </Link>
-          <Link
-            href="/contact"
-            className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-          >
-            Contact
-          </Link>
+        <nav className="hidden md:flex items-center gap-1">
+          {[
+            { href: "/", label: "Home", icon: Home },
+            { href: "/features", label: "Features" },
+            { href: "/how-it-works", label: "How It Works" },
+            { href: "/about", label: "About" },
+            { href: "/contact", label: "Contact" },
+          ].map((item) => {
+            const isActive = item.href === "/" ? pathname === "/" : pathname?.startsWith(item.href)
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="group relative px-3 py-2 rounded-md transition-colors hover:bg-muted/60"
+              >
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  {Icon ? <Icon className="w-4 h-4" /> : null}
+                  <span className={isActive ? "text-foreground" : "text-foreground/80 group-hover:text-foreground"}>
+                    {item.label}
+                  </span>
+                </div>
+                {isActive ? (
+                  <motion.span
+                    layoutId="active-nav-underline"
+                    className="absolute left-2 right-2 -bottom-[2px] h-[2px] rounded-full bg-primary"
+                  />
+                ) : (
+                  <span className="pointer-events-none absolute left-2 right-2 -bottom-[2px] h-[2px] rounded-full bg-transparent group-hover:bg-primary/40 transition-colors" />
+                )}
+              </Link>
+            )
+          })}
         </nav>
 
         {/* Desktop Auth Buttons / User Menu */}
         <div className="hidden md:flex items-center gap-3">
           <ThemeToggle />
           {loading ? (
-            <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+            // Show minimal loading indicator that matches the expected size
+            <div className="flex items-center gap-2 px-3 py-2 h-10">
+              <div className="w-8 h-8 rounded-full bg-muted/50" />
+              <div className="w-24 h-4 bg-muted/50 rounded" />
+            </div>
           ) : user && profile ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -217,6 +172,13 @@ export function SiteHeader() {
         <div className="md:hidden border-t bg-background">
           <nav className="container mx-auto px-4 md:px-6 py-4 flex flex-col gap-4">
             <Link
+              href="/"
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <Link
               href="/features"
               className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
@@ -246,7 +208,11 @@ export function SiteHeader() {
             </Link>
             <div className="flex flex-col gap-2 pt-2 border-t">
               {loading ? (
-                <div className="w-full h-10 rounded-lg bg-muted animate-pulse" />
+                // Show minimal loading indicator
+                <div className="flex items-center gap-2 px-2 py-2">
+                  <div className="w-8 h-8 rounded-full bg-muted/50" />
+                  <div className="flex-1 h-4 bg-muted/50 rounded" />
+                </div>
               ) : user && profile ? (
                 <>
                   <div className="flex items-center gap-2 px-2 py-2">

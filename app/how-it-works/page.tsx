@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
@@ -16,6 +18,7 @@ import {
   Wifi
 } from "lucide-react"
 import Link from "next/link"
+import { motion } from "framer-motion"
 
 export default function HowItWorksPage() {
   const steps = [
@@ -119,10 +122,14 @@ export default function HowItWorksPage() {
         {/* Hero Section */}
         <section className="py-24 md:py-32 bg-gradient-to-br from-[#190482] via-[#7752FE] to-[#8E8FFA] text-white">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="max-w-4xl mx-auto text-center space-y-8">
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
-                How GyanPath Works
-              </h1>
+            <motion.div 
+              className="max-w-4xl mx-auto text-center space-y-8"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.6 }}
+            >
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">How GyanPath Works</h1>
               <p className="text-xl md:text-2xl text-white/90 leading-relaxed">
                 Start learning in four simple steps. No credit card required, no complex setup - just download and learn.
               </p>
@@ -132,7 +139,7 @@ export default function HowItWorksPage() {
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </Button>
-            </div>
+            </motion.div>
           </div>
         </section>
 
@@ -150,7 +157,14 @@ export default function HowItWorksPage() {
               {steps.map((step, index) => {
                 const IconComponent = step.icon
                 return (
-                  <div key={index} className="relative">
+                  <motion.div 
+                    key={index} 
+                    className="relative"
+                    initial={{ opacity: 0, y: 24 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ duration: 0.5, delay: index * 0.08 }}
+                  >
                     <div className="grid md:grid-cols-2 gap-12 items-center mb-24">
                       {/* Content */}
                       <div className={`space-y-6 ${index % 2 === 1 ? 'md:order-2' : ''}`}>
@@ -178,9 +192,13 @@ export default function HowItWorksPage() {
 
                       {/* Visual */}
                       <div className={`relative ${index % 2 === 1 ? 'md:order-1' : ''}`}>
-                        <div className="aspect-square max-w-md mx-auto bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl flex items-center justify-center">
+                        <motion.div 
+                          className="aspect-square max-w-md mx-auto bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl flex items-center justify-center"
+                          whileHover={{ scale: 1.02 }}
+                          transition={{ type: "spring", stiffness: 250, damping: 18 }}
+                        >
                           <IconComponent className="w-32 h-32 text-primary" />
-                        </div>
+                        </motion.div>
                       </div>
                     </div>
 
@@ -190,7 +208,7 @@ export default function HowItWorksPage() {
                         <ArrowDown className="w-8 h-8 text-primary/40" />
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                 )
               })}
             </div>
@@ -211,9 +229,17 @@ export default function HowItWorksPage() {
               {features.map((feature, index) => {
                 const IconComponent = feature.icon
                 return (
-                  <div key={index} className="p-8 rounded-2xl border bg-card">
+                  <motion.div 
+                    key={index} 
+                    className="p-8 rounded-2xl border bg-card group"
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.2 }}
+                    transition={{ duration: 0.45, delay: index * 0.06 }}
+                    whileHover={{ y: -4 }}
+                  >
                     <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
-                      <IconComponent className="w-8 h-8 text-primary" />
+                      <IconComponent className="w-8 h-8 text-primary transition-transform group-hover:scale-110" />
                     </div>
                     <h3 className="text-2xl font-bold mb-3">{feature.title}</h3>
                     <p className="text-muted-foreground mb-6">{feature.description}</p>
@@ -225,7 +251,7 @@ export default function HowItWorksPage() {
                         </li>
                       ))}
                     </ul>
-                  </div>
+                  </motion.div>
                 )
               })}
             </div>
@@ -235,7 +261,13 @@ export default function HowItWorksPage() {
         {/* Technology Section */}
         <section className="py-24 md:py-32 bg-background">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="max-w-4xl mx-auto text-center space-y-12">
+            <motion.div 
+              className="max-w-4xl mx-auto text-center space-y-12"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5 }}
+            >
               <div>
                 <h2 className="text-4xl md:text-5xl font-bold mb-4">Designed for Rural Connectivity</h2>
                 <p className="text-xl text-muted-foreground">
@@ -284,7 +316,7 @@ export default function HowItWorksPage() {
                   </p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </section>
 
