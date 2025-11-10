@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation"
 import { createServerClient } from "@/lib/supabase/server"
 import { DashboardLayout } from "@/components/dashboard-layout"
-import { GroupAnalyticsStats } from "@/components/group-analytics-stats"
-import { GroupMembersList } from "@/components/group-members-list"
+import { GroupAnalytics } from "@/components/group-analytics"
+import { MemberManagement } from "@/components/member-management"
+import { MemberProgressTable } from "@/components/member-progress-table"
+import { AnnouncementBoard } from "@/components/announcement-board"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
@@ -45,6 +47,24 @@ export default async function GroupDetailPage({
     redirect("/group-admin")
   }
 
+  // Get initial members
+  const { data: initialMembers } = await supabase
+    .from("group_members")
+    .select(
+      `
+      id,
+      user_id,
+      joined_at,
+      user:profiles!group_members_user_id_fkey(
+        id,
+        full_name,
+        email,
+        avatar_url
+      )
+    `
+    )
+    .eq("group_id", groupId)
+
   return (
     <DashboardLayout role="group_admin" userName={profile.full_name}>
       <div className="space-y-8">
@@ -60,10 +80,16 @@ export default async function GroupDetailPage({
         </div>
 
         {/* Analytics Stats */}
-        <GroupAnalyticsStats groupId={groupId} />
+        <GroupAnalytics groupId={groupId} />
 
-        {/* Members List */}
-        <GroupMembersList groupId={groupId} />
+        {/* Members Management */}
+        <MemberManagement groupId={groupId} initialMembers={initialMembers || []} />
+
+        {/* Member Progress */}
+        <MemberProgressTable groupId={groupId} />
+
+        {/* Announcements */}
+        <AnnouncementBoard groupId={groupId} canCreate={true} />
       </div>
     </DashboardLayout>
   )

@@ -38,21 +38,21 @@ export default async function AdminDashboard() {
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="grid md:grid-cols-3 gap-4">
-            <div className="p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors">
+            <a href="/admin/users" className="p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors">
               <Users className="w-8 h-8 text-[#7752FE] mb-2" />
               <h3 className="font-semibold">Manage Users</h3>
               <p className="text-sm text-muted-foreground">View and manage user accounts</p>
-            </div>
-            <div className="p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors">
+            </a>
+            <a href="/admin/courses" className="p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors">
               <BookOpen className="w-8 h-8 text-[#7752FE] mb-2" />
               <h3 className="font-semibold">Manage Courses</h3>
-              <p className="text-sm text-muted-foreground">Create and edit courses</p>
-            </div>
-            <div className="p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors">
+              <p className="text-sm text-muted-foreground">Moderate and approve courses</p>
+            </a>
+            <a href="/admin/analytics" className="p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors">
               <TrendingUp className="w-8 h-8 text-[#7752FE] mb-2" />
               <h3 className="font-semibold">View Analytics</h3>
               <p className="text-sm text-muted-foreground">Platform usage statistics</p>
-            </div>
+            </a>
           </CardContent>
         </Card>
       </div>

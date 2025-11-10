@@ -4,12 +4,13 @@ import type React from "react"
 
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { BookOpen, Home, LogOut, Settings, Users, Video, FileText, BarChart } from "lucide-react"
+import { BookOpen, Home, LogOut, Settings, Users, Video, FileText, BarChart, MessageSquare } from "lucide-react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import type { UserRole } from "@/lib/types"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
+import { NotificationBell } from "@/components/notification-bell"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -40,6 +41,7 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
   const getNavItems = () => {
     const baseItems = [
       { href: `/${role}`, icon: Home, label: "Dashboard" },
+      { href: "/messages", icon: MessageSquare, label: "Messages" },
       { href: `/${role}/profile`, icon: Settings, label: "Profile" },
     ]
 
@@ -132,6 +134,9 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
 
         {/* Main Content */}
         <main className="flex-1 overflow-auto">
+          <div className="sticky top-0 z-10 bg-white border-b px-8 py-4 flex items-center justify-end">
+            <NotificationBell />
+          </div>
           <div className="container mx-auto p-8">{children}</div>
         </main>
       </div>

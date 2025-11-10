@@ -4,6 +4,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Video, FileText, Users } from "lucide-react"
 import { PublishCourseButton } from "@/components/publish-course-button"
+import { CourseModeration } from "@/components/course-moderation"
 import type { Lesson } from "@/lib/types"
 
 export default async function AdminCourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -116,6 +117,11 @@ export default async function AdminCourseDetailPage({ params }: { params: Promis
               <div className="text-2xl font-bold text-[#7752FE]">{enrollmentCount || 0}</div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Course Moderation */}
+        <div className="grid md:grid-cols-2 gap-6">
+          <CourseModeration course={course} />
         </div>
 
         {/* Lessons List */}
