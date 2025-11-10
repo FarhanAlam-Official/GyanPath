@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useAuth } from "@/hooks/use-auth"
 import { createClient } from "@/lib/supabase/client"
 import { AuthLayout } from "@/components/auth/auth-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,7 +13,7 @@ import { motion } from "framer-motion"
 import { notifications } from "@/lib/notifications"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { cn } from "@/lib/utils"
+
 
 /**
  * Verify Page Component
@@ -37,137 +38,140 @@ export default function VerifyPage() {
   const [emailSent, setEmailSent] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
   const [isVerified, setIsVerified] = useState(false)
-
-  // Get code immediately from URL on mount
-  const codeFromUrl =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("code") ||
-        (() => {
-          const hash = window.location.hash
-          if (hash) {
-            const params = new URLSearchParams(hash.substring(1))
-            const accessToken = params.get("access_token")
-            const type = params.get("type")
-            if (accessToken && type === "email") {
-              return accessToken
-            }
-            return params.get("code")
-          }
-          return null
-        })()
-      : null
+  const [isMounted, setIsMounted] = useState(false)
+  const { resendVerificationEmail } = useAuth()
 
   // Get code from query params or hash fragment
-  const [code, setCode] = useState<string | null>(codeFromUrl || codeFromQuery)
+  const [code, setCode] = useState<string | null>(codeFromQuery)
+
+  // Handle client-side mounting
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   /**
-   * Extract code from hash fragment if not in query params
+   * Extract verification tokens from URL hash or query params
+   * Supabase uses hash fragments for email verification
    */
   useEffect(() => {
-    if (codeFromUrl) {
-      setCode(codeFromUrl)
-      return
-    }
+    if (!isMounted) return
 
-    if (codeFromQuery) {
-      setCode(codeFromQuery)
-      return
-    }
+    let extractedCode = null
 
-    // Check hash fragment for Supabase auth tokens
-    if (typeof window !== "undefined") {
-      const hash = window.location.hash
-      if (hash) {
-        const params = new URLSearchParams(hash.substring(1))
-        const accessToken = params.get("access_token")
-        const type = params.get("type")
-
-        if (accessToken && type === "email") {
-          setCode(accessToken)
-        } else {
-          // Try to extract code from hash
-          const codeFromHash = params.get("code")
-          if (codeFromHash) {
-            setCode(codeFromHash)
-          }
-        }
+    // Check hash fragment for Supabase auth tokens (primary method)
+    const hash = window.location.hash
+    if (hash) {
+      const params = new URLSearchParams(hash.substring(1))
+      const accessToken = params.get("access_token")
+      const type = params.get("type")
+      
+      // Supabase sends access_token with type for email verification
+      if (accessToken && type) {
+        extractedCode = accessToken
       }
     }
-  }, [codeFromQuery, codeFromUrl])
+
+    // Fallback to query params if needed
+    if (!extractedCode && codeFromQuery) {
+      extractedCode = codeFromQuery
+    }
+
+    if (extractedCode && extractedCode !== code) {
+      setCode(extractedCode)
+    }
+  }, [isMounted, codeFromQuery, code])
 
   /**
-   * Handle email verification code from URL
-   * Exchanges the code with Supabase to verify the email
+   * Handle email verification from URL
+   * Supabase automatically handles email verification via URL hash fragments
    */
   useEffect(() => {
-    const verifyCode = async () => {
-      if (!code) return
+    let retryCount = 0
+    const maxRetries = 10 // Retry up to 10 times
+    
+    const handleVerification = async () => {
+      if (!isMounted) return
+
+      const supabase = createClient()
+      const hasAuthParams = window.location.hash.includes("access_token") || 
+                          window.location.hash.includes("refresh_token") ||
+                          window.location.search.includes("code=")
+
+      // If no auth parameters in URL, just show the resend form
+      if (!hasAuthParams) {
+        setIsVerifying(false)
+        return
+      }
 
       setIsVerifying(true)
-      const supabase = createClient()
 
       try {
-        // Try to exchange the code for a session
-        // First, try verifyOtp with the code as token_hash
-        const { data, error } = await supabase.auth.verifyOtp({
-          token_hash: code,
-          type: "email",
-        })
-
-        if (error) {
-          // If that fails, try with the code directly as token
-          const { data: data2, error: error2 } = await supabase.auth.verifyOtp({
-            token: code,
-            type: "email",
+        // Check current session state
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error("Session error:", sessionError)
+          setIsVerifying(false)
+          notifications.showError({
+            title: "Verification failed",
+            description: sessionError.message || "Unable to verify your email. Please try again.",
           })
-
-          if (error2) {
-            notifications.showError({
-              title: "Verification failed",
-              description: error2.message || "The verification link is invalid or has expired.",
-            })
-            return
-          }
-
-          if (data2?.user) {
-            setIsVerified(true)
-            notifications.showSuccess({
-              title: "Email verified successfully!",
-              description: "Your account has been verified. Redirecting to login...",
-            })
-
-            setTimeout(() => {
-              router.push("/auth/login")
-            }, 2000)
-          }
           return
         }
 
-        if (data?.user) {
-          setIsVerified(true)
-          notifications.showSuccess({
-            title: "Email verified successfully!",
-            description: "Your account has been verified. Redirecting to login...",
-          })
+        // If we have a session and the user is confirmed, verification is successful
+        if (sessionData?.session?.user) {
+          const user = sessionData.session.user
+          
+          // Check if user is confirmed (email verified)
+          if (user.email_confirmed_at) {
+            setIsVerified(true)
+            notifications.showSuccess({
+              title: "Email verified successfully!",
+              description: "Your account has been verified. Redirecting to dashboard...",
+            })
 
-          // Redirect to login after a short delay
-          setTimeout(() => {
-            router.push("/auth/login")
-          }, 2000)
+            // Redirect to appropriate dashboard
+            setTimeout(async () => {
+              // Refresh router to pick up server-side session
+              router.refresh()
+              await new Promise(resolve => setTimeout(resolve, 300))
+              router.push("/learner")
+            }, 2000)
+            return
+          }
         }
+
+        // If no session or user not confirmed, retry if we haven't exceeded max retries
+        if (retryCount < maxRetries) {
+          retryCount++
+          
+          // Wait progressively longer between retries
+          const waitTime = Math.min(1000 * retryCount, 5000)
+          setTimeout(handleVerification, waitTime)
+        } else {
+          // Max retries exceeded
+          setIsVerifying(false)
+          notifications.showError({
+            title: "Verification timeout",
+            description: "The verification process is taking longer than expected. Please try requesting a new verification email.",
+          })
+        }
+
       } catch (error: unknown) {
-        console.error("Verification error:", error)
-        notifications.showError({
-          title: "Verification failed",
-          description: error instanceof Error ? error.message : "An unexpected error occurred.",
-        })
-      } finally {
+        console.error("Verification process error:", error)
         setIsVerifying(false)
+        notifications.showError({
+          title: "Verification failed", 
+          description: error instanceof Error ? error.message : "An unexpected error occurred during verification.",
+        })
       }
     }
 
-    verifyCode()
-  }, [code, router])
+    // Start verification process after a brief delay to ensure URL is processed
+    const timeoutId = setTimeout(handleVerification, 1000)
+    return () => clearTimeout(timeoutId)
+  }, [isMounted, router])
 
   /**
    * Handle resend verification email
@@ -193,35 +197,23 @@ export default function VerifyPage() {
     }
 
     setIsResending(true)
-    const supabase = createClient()
 
     try {
-      // Resend verification email
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email: resendEmail,
-        options: {
-          emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
-            `${window.location.origin}/auth/verify`,
-        },
-      })
+      const result = await resendVerificationEmail(resendEmail)
 
-      if (error) {
+      if (result.success) {
+        setEmailSent(true)
+        notifications.showSuccess({
+          title: "Verification email sent!",
+          description: "Please check your inbox and spam folder.",
+        })
+      } else {
         notifications.showError({
           title: "Failed to send email",
-          description: error.message,
+          description: typeof result.error === 'string' ? result.error : result.error?.message || "Please try again later.",
         })
-        return
       }
-
-      setEmailSent(true)
-      notifications.showSuccess({
-        title: "Verification email sent!",
-        description: "Please check your inbox and spam folder.",
-      })
     } catch (error: unknown) {
-      console.error("Resend error:", error)
       notifications.showError({
         title: "An unexpected error occurred",
         description: error instanceof Error ? error.message : "Please try again later.",

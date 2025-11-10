@@ -1,11 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { createClient } from "@/lib/supabase/client"
+import { useAuth } from "@/hooks/use-auth"
 import { AuthLayout } from "@/components/auth/auth-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,11 +12,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { PasswordInput } from "@/components/auth/password-input"
+import { SocialLoginButtons } from "@/components/auth/social-login-buttons"
 import Link from "next/link"
 import { Loader2, LogIn, Mail, Lock, BookOpen, Award, Users } from "lucide-react"
 import { notifications } from "@/lib/notifications"
 import { cn } from "@/lib/utils"
-import { setSessionPreference, clearSessionPreference } from "@/lib/auth/session"
 
 /**
  * Login Form Schema
@@ -40,7 +39,6 @@ type LoginFormData = z.infer<typeof loginSchema>
  * Enhanced login page with:
  * - Form validation using Zod and react-hook-form
  * - Password visibility toggle
- * - Forgot password link
  * - Toast notifications for errors/success
  * - Loading states with spinners
  * - Smooth animations
@@ -48,7 +46,7 @@ type LoginFormData = z.infer<typeof loginSchema>
  * - Accessibility features (ARIA labels, keyboard navigation)
  */
 export default function LoginPage() {
-  const router = useRouter()
+  const { signIn, loading: authLoading, user, profile } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
 
@@ -65,6 +63,22 @@ export default function LoginPage() {
       email: "",
     },
   })
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && profile && !authLoading) {
+      // Redirect based on role
+      if (profile.role === "admin") {
+        window.location.href = "/admin"
+      } else if (profile.role === "instructor") {
+        window.location.href = "/instructor"
+      } else if (profile.role === "group_admin") {
+        window.location.href = "/group-admin"
+      } else {
+        window.location.href = "/learner"
+      }
+    }
+  }, [user, profile, authLoading])
 
   // Load remembered email on mount
   useEffect(() => {
@@ -85,70 +99,30 @@ export default function LoginPage() {
    */
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
-    const supabase = createClient()
 
     try {
-      // Sign in with email and password
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      })
+      // Use enhanced signIn from auth context
+      const result = await signIn(data.email, data.password, data.rememberMe)
 
-      if (signInError) {
-        // Handle specific error cases
-        if (signInError.message.includes("Invalid login credentials")) {
-          notifications.showError({
-            title: "Invalid email or password",
-            description: "Please check your credentials and try again.",
-          })
-        } else if (signInError.message.includes("Email not confirmed")) {
+      if (result.error) {
+        // Handle specific error types with user-friendly messages
+        if (result.error.type === "email_not_confirmed") {
           notifications.showError({
             title: "Email not verified",
-            description: "Please verify your email before signing in.",
+            description: "Please verify your email before signing in. Check your inbox for the verification link.",
+          })
+        } else if (result.error.type === "rate_limit") {
+          notifications.showError({
+            title: "Too many attempts",
+            description: result.error.message,
           })
         } else {
           notifications.showError({
             title: "Login failed",
-            description: signInError.message,
+            description: result.error.message,
           })
         }
         return
-      }
-
-      // Get user profile to determine role-based redirect
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .single()
-
-      if (profileError) {
-        console.error("Error fetching profile:", profileError)
-        // Still allow login, redirect to default dashboard
-        router.push("/learner")
-        return
-      }
-
-      // Handle remember me functionality
-      if (data.rememberMe) {
-        // Store email for auto-fill
-        localStorage.setItem("rememberedEmail", data.email)
-        localStorage.setItem("rememberMe", "true")
-
-        // Set session preference for 30-day persistence
-        setSessionPreference(true)
-
-        // Set a cookie that the server can read to configure session duration
-        const secureFlag = process.env.NODE_ENV === "production" ? "; Secure" : ""
-        document.cookie = `sb-session-preference=remember_me; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax${secureFlag}`
-      } else {
-        localStorage.removeItem("rememberedEmail")
-        localStorage.removeItem("rememberMe")
-
-        // Clear session preference
-        clearSessionPreference()
-
-        // Remove the session preference cookie
-        document.cookie = `sb-session-preference=; path=/; max-age=0; SameSite=Lax`
       }
 
       // Show success toast
@@ -157,22 +131,13 @@ export default function LoginPage() {
         description: "Redirecting to your dashboard...",
       })
 
-      // Small delay to show success message before redirect
-      setTimeout(() => {
-        // Redirect based on user role
-        if (profile?.role === "admin") {
-          router.push("/admin")
-        } else if (profile?.role === "group_admin") {
-          router.push("/group-admin")
-        } else if (profile?.role === "instructor") {
-          router.push("/instructor")
-        } else {
-          router.push("/learner")
-        }
-      }, 500)
+      // Wait for session to be fully established in cookies
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      // Use window.location for hard navigation to ensure cookies are sent
+      window.location.href = "/learner"
     } catch (error: unknown) {
       // Handle unexpected errors
-      console.error("Login error:", error)
       notifications.showError({
         title: "An unexpected error occurred",
         description: error instanceof Error ? error.message : "Please try again later.",
@@ -351,24 +316,25 @@ export default function LoginPage() {
                         {errors.password.message}
                       </p>
                     )}
-                    {/* Forgot Password Link - Centered below password field */}
-                    <div className="flex justify-center pt-1">
-                      <Link
-                        href="/auth/forgot-password"
-                        className="text-sm text-muted-foreground hover:text-[#7752FE] transition-colors font-medium no-underline flex items-center gap-1.5"
-                      >
-                        Forgot password?
-                      </Link>
-                    </div>
+                  </div>
+
+                  {/* Forgot Password Link */}
+                  <div className="flex justify-end">
+                    <Link
+                      href="/auth/forgot-password"
+                      className="text-sm text-muted-foreground hover:text-[#7752FE] transition-colors font-medium"
+                    >
+                      Forgot password?
+                    </Link>
                   </div>
 
                   {/* Submit Button */}
                   <Button
                     type="submit"
                     className="w-full h-12 text-base font-semibold bg-gradient-to-r from-[#190482] via-[#7752FE] to-[#8E8FFA] hover:from-[#190482]/90 hover:via-[#7752FE]/90 hover:to-[#8E8FFA]/90 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl shadow-primary/25 mt-6"
-                    disabled={isLoading}
+                    disabled={isLoading || authLoading}
                   >
-                    {isLoading ? (
+                    {isLoading || authLoading ? (
                       <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         Signing in...
@@ -380,6 +346,9 @@ export default function LoginPage() {
                       </>
                     )}
                   </Button>
+
+                  {/* Social Login Buttons */}
+                  <SocialLoginButtons mode="sign_in" className="pt-4" />
 
                   {/* Sign Up Link */}
                   <div className="text-center text-sm pt-4 border-t border-border">

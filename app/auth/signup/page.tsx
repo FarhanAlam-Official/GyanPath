@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { createClient } from "@/lib/supabase/client"
+import { useAuth } from "@/hooks/use-auth"
 import { AuthLayout } from "@/components/auth/auth-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { PasswordInput } from "@/components/auth/password-input"
 import { PasswordStrength } from "@/components/auth/password-strength"
+import { SocialLoginButtons } from "@/components/auth/social-login-buttons"
 import Link from "next/link"
 import { Loader2, UserPlus, Mail, Lock, User, BookOpen, Award, Users } from "lucide-react"
 import { notifications } from "@/lib/notifications"
@@ -72,6 +73,7 @@ type SignupFormData = z.infer<typeof signupSchema>
  */
 export default function SignUpPage() {
   const router = useRouter()
+  const { signUp, loading: authLoading } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
 
   const {
@@ -106,46 +108,31 @@ export default function SignUpPage() {
 
   /**
    * Handle form submission
-   * Creates new user account with Supabase and redirects to verification page
+   * Uses enhanced auth context with rate limiting and better error handling
    */
   const onSubmit = async (data: SignupFormData) => {
     setIsLoading(true)
-    const supabase = createClient()
 
     try {
-      // Create user account
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
-            `${window.location.origin}/auth/verify`,
-          data: {
-            full_name: data.fullName,
-            role: data.role,
-            preferred_language: data.language,
-          },
-        },
-      })
+      // Use enhanced signUp from auth context
+      const result = await signUp(data.email, data.password, data.fullName, data.role)
 
-      if (signUpError) {
-        // Handle specific error cases
-        if (signUpError.message.includes("User already registered")) {
+      if (result.error) {
+        // Handle specific error types with user-friendly messages
+        if (result.error.type === "rate_limit") {
           notifications.showError({
-            title: "Email already registered",
-            description:
-              "This email is already associated with an account. Please sign in instead.",
+            title: "Too many attempts",
+            description: result.error.message,
           })
-        } else if (signUpError.message.includes("Password")) {
+        } else if (result.error.type === "network") {
           notifications.showError({
-            title: "Password validation failed",
-            description: signUpError.message,
+            title: "Connection Error",
+            description: result.error.message,
           })
         } else {
           notifications.showError({
             title: "Sign up failed",
-            description: signUpError.message,
+            description: result.error.message,
           })
         }
         return
@@ -162,7 +149,6 @@ export default function SignUpPage() {
         router.push("/auth/verify")
       }, 1000)
     } catch (error: unknown) {
-      console.error("Signup error:", error)
       notifications.showError({
         title: "An unexpected error occurred",
         description: error instanceof Error ? error.message : "Please try again later.",
@@ -400,9 +386,9 @@ export default function SignUpPage() {
                   <Button
                     type="submit"
                     className="w-full h-12 text-base font-semibold bg-gradient-to-r from-[#190482] via-[#7752FE] to-[#8E8FFA] hover:from-[#190482]/90 hover:via-[#7752FE]/90 hover:to-[#8E8FFA]/90 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl shadow-primary/25 mt-4"
-                    disabled={isLoading}
+                    disabled={isLoading || authLoading}
                   >
-                    {isLoading ? (
+                    {isLoading || authLoading ? (
                       <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         Creating your account...
@@ -414,6 +400,9 @@ export default function SignUpPage() {
                       </>
                     )}
                   </Button>
+
+                  {/* Social Login Buttons */}
+                  <SocialLoginButtons mode="sign_up" className="pt-4" />
 
                   {/* Sign In Link */}
                   <div className="text-center text-sm pt-4 border-t border-border">

@@ -1,11 +1,12 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { createClient } from "@/lib/supabase/client"
+import { useAuth } from "@/hooks/use-auth"
 import { AuthLayout } from "@/components/auth/auth-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -44,19 +45,21 @@ type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>
  * - Link back to login
  */
 export default function ForgotPasswordPage() {
-  const [isLoading, setIsLoading] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [sentEmail, setSentEmail] = useState("")
   const [countdown, setCountdown] = useState(0)
+  const { resetPasswordForEmail } = useAuth()
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
     mode: "onBlur",
   })
+
+  const isLoading = isSubmitting
 
   // Countdown timer effect
   useEffect(() => {
@@ -70,50 +73,32 @@ export default function ForgotPasswordPage() {
 
   /**
    * Handle form submission
-   * Sends password reset email via Supabase
+   * Sends password reset email via auth context
    */
   const onSubmit = async (data: ForgotPasswordFormData) => {
-    setIsLoading(true)
-    const supabase = createClient()
-
     try {
-      // Send password reset email
-      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      })
-
-      if (error) {
-        // Handle specific error cases
-        if (error.message.includes("rate limit")) {
-          notifications.showError({
-            title: "Too many requests",
-            description: "Please wait a few minutes before trying again.",
-          })
-        } else {
-          notifications.showError({
-            title: "Failed to send email",
-            description: error.message,
-          })
-        }
-        return
+      const result = await resetPasswordForEmail(data.email)
+      if (!result.error) {
+        // Show success state
+        setEmailSent(true)
+        setSentEmail(data.email)
+        setCountdown(60) // Start 60 second countdown
+        notifications.showSuccess({
+          title: "Reset email sent!",
+          description: "Please check your inbox for password reset instructions.",
+        })
+      } else {
+        // Handle error cases
+        notifications.showError({
+          title: "Failed to send email",
+          description: typeof result.error === "string" ? result.error : result.error?.message || "Please try again later.",
+        })
       }
-
-      // Show success state
-      setEmailSent(true)
-      setSentEmail(data.email)
-      setCountdown(60) // Start 60 second countdown
-      notifications.showSuccess({
-        title: "Reset email sent!",
-        description: "Please check your inbox for password reset instructions.",
-      })
     } catch (error: unknown) {
-      console.error("Forgot password error:", error)
       notifications.showError({
         title: "An unexpected error occurred",
         description: error instanceof Error ? error.message : "Please try again later.",
       })
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -124,45 +109,26 @@ export default function ForgotPasswordPage() {
   const handleResend = async () => {
     if (countdown > 0 || !sentEmail) return
 
-    setIsLoading(true)
-    const supabase = createClient()
-
     try {
-      // Send password reset email again
-      const { error } = await supabase.auth.resetPasswordForEmail(sentEmail, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      })
-
-      if (error) {
-        // Handle specific error cases
-        if (error.message.includes("rate limit")) {
-          notifications.showError({
-            title: "Too many requests",
-            description: "Please wait a few minutes before trying again.",
-          })
-        } else {
-          notifications.showError({
-            title: "Failed to send email",
-            description: error.message,
-          })
-        }
-        return
+      const result = await resetPasswordForEmail(sentEmail)
+      if (!result.error) {
+        // Restart countdown
+        setCountdown(60)
+        notifications.showSuccess({
+          title: "Email resent!",
+          description: "Please check your inbox for password reset instructions.",
+        })
+      } else {
+        notifications.showError({
+          title: "Failed to send email",
+          description: typeof result.error === "string" ? result.error : result.error?.message || "Please try again later.",
+        })
       }
-
-      // Restart countdown
-      setCountdown(60)
-      notifications.showSuccess({
-        title: "Email resent!",
-        description: "Please check your inbox for password reset instructions.",
-      })
     } catch (error: unknown) {
-      console.error("Resend email error:", error)
       notifications.showError({
         title: "An unexpected error occurred",
         description: error instanceof Error ? error.message : "Please try again later.",
       })
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -190,6 +156,7 @@ export default function ForgotPasswordPage() {
             <CardTitle className="text-2xl font-bold text-foreground">
               Forgot Password?
             </CardTitle>
+
             <CardDescription className="text-base">
               {emailSent
                 ? "Check your email for reset instructions"
@@ -259,6 +226,7 @@ export default function ForgotPasswordPage() {
                       </span>
                     )}
                   </Button>
+
                   <Button
                     asChild
                     variant="ghost"
