@@ -1,78 +1,107 @@
-import { createClient } from "@/lib/supabase/server"
+import { createServerClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
-import { ApiError } from "@/lib/utils/api-error"
+
+const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg"]
+const ALLOWED_PDF_TYPES = ["application/pdf"]
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"]
+
+const MAX_VIDEO_SIZE = 500 * 1024 * 1024 // 500MB
+const MAX_PDF_SIZE = 100 * 1024 * 1024 // 100MB
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10MB
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
     if (!user) {
-      throw new ApiError("Unauthorized", 401)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const formData = await request.formData()
     const file = formData.get("file") as File
-    const bucket = formData.get("bucket") as string
-    const folder = formData.get("folder") as string | null
-    const path = formData.get("path") as string | null
+    const type = formData.get("type") as string // 'video', 'pdf', 'image'
 
     if (!file) {
-      throw new ApiError("No file provided", 400)
+      return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
-    if (!bucket) {
-      throw new ApiError("No bucket specified", 400)
+    if (!type || !["video", "pdf", "image"].includes(type)) {
+      return NextResponse.json({ error: "Invalid file type" }, { status: 400 })
     }
 
-    // Validate bucket name
-    const validBuckets = ["videos", "pdfs", "images", "thumbnails"]
-    if (!validBuckets.includes(bucket)) {
-      throw new ApiError("Invalid bucket", 400)
+    // Validate file type and size
+    let allowedTypes: string[]
+    let maxSize: number
+    let bucket: string
+
+    switch (type) {
+      case "video":
+        allowedTypes = ALLOWED_VIDEO_TYPES
+        maxSize = MAX_VIDEO_SIZE
+        bucket = "videos"
+        break
+      case "pdf":
+        allowedTypes = ALLOWED_PDF_TYPES
+        maxSize = MAX_PDF_SIZE
+        bucket = "pdfs"
+        break
+      case "image":
+        allowedTypes = ALLOWED_IMAGE_TYPES
+        maxSize = MAX_IMAGE_SIZE
+        bucket = "images"
+        break
+      default:
+        return NextResponse.json({ error: "Invalid file type" }, { status: 400 })
     }
 
-    // Generate file path
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: `Invalid file type. Allowed types: ${allowedTypes.join(", ")}` },
+        { status: 400 }
+      )
+    }
+
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { error: `File size exceeds maximum of ${maxSize / (1024 * 1024)}MB` },
+        { status: 400 }
+      )
+    }
+
+    // Generate unique filename
     const timestamp = Date.now()
-    const extension = file.name.split(".").pop()
-    const filename = `${timestamp}-${Math.random().toString(36).substring(7)}.${extension}`
-    const filePath = path || (folder ? `${folder}/${filename}` : filename)
+    const random = Math.random().toString(36).substring(7)
+    const filename = `${timestamp}-${random}-${file.name}`
 
-    // Upload file
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(filePath, file, {
-        contentType: file.type,
-        cacheControl: "3600",
-        upsert: false,
-      })
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage.from(bucket).upload(`${user.id}/${filename}`, file, {
+      cacheControl: "3600",
+      upsert: false,
+    })
 
-    if (uploadError) {
-      throw new ApiError(`Upload failed: ${uploadError.message}`, 500)
+    if (error) {
+      console.error("Upload error:", error)
+      return NextResponse.json({ error: "Failed to upload file" }, { status: 500 })
     }
 
     // Get public URL
     const {
       data: { publicUrl },
-    } = supabase.storage.from(bucket).getPublicUrl(uploadData.path)
+    } = supabase.storage.from(bucket).getPublicUrl(`${user.id}/${filename}`)
 
-    return NextResponse.json({
-      url: publicUrl,
-      path: uploadData.path,
-      size: file.size,
-      type: file.type,
-    })
-  } catch (error) {
-    if (error instanceof ApiError) {
-      return NextResponse.json({ error: error.message }, { status: error.statusCode })
-    }
-
-    console.error("Upload error:", error)
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      {
+        url: publicUrl,
+        path: data.path,
+        filename: file.name,
+      },
+      { status: 201 }
     )
+  } catch (error) {
+    console.error("Upload error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
-

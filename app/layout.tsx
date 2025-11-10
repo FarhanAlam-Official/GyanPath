@@ -5,6 +5,7 @@ import "./globals.css"
 
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
 import { OfflineIndicator } from "@/components/offline-indicator"
+import { ServiceWorkerRegister } from "@/components/service-worker-register"
 import { ThemeProvider } from "@/components/theme-provider"
 import { QueryProvider } from "@/components/providers/query-provider"
 import { AuthProvider } from "@/lib/auth/context"
@@ -62,24 +63,11 @@ export default async function RootLayout({
               {children}
               <PWAInstallPrompt />
               <OfflineIndicator />
+              <ServiceWorkerRegister />
               <Toaster />
             </AuthProvider>
           </ThemeProvider>
         </QueryProvider>
-        {/* Temporarily disable SW caching while debugging auth/reset flow */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(registrations => {
-                  for (const reg of registrations) {
-                    reg.unregister().catch(() => {});
-                  }
-                });
-              }
-            `,
-          }}
-        />
       </body>
     </html>
   )
