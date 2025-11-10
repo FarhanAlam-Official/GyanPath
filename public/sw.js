@@ -1,16 +1,9 @@
-const CACHE_NAME = "gyanpath-v2"
+const CACHE_NAME = "gyanpath-v3"
 const OFFLINE_URL = "/offline"
 const RUNTIME_CACHE = "gyanpath-runtime"
 
 // Assets to cache on install
-const STATIC_ASSETS = [
-  "/",
-  "/offline",
-  "/manifest.json",
-  "/icon-192.jpg",
-  "/icon-512.jpg",
-  "/_next/static/css/app/layout.css",
-]
+const STATIC_ASSETS = ["/", "/offline", "/manifest.json", "/icon-192.jpg", "/icon-512.jpg"]
 
 // Install event - cache static assets
 self.addEventListener("install", (event) => {
