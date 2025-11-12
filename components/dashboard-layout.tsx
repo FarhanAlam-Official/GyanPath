@@ -76,7 +76,8 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
     return [
       ...baseItems,
       { href: "/learner/courses", icon: BookOpen, label: "My Courses" },
-      { href: "/learner/browse", icon: BookOpen, label: "Browse Courses" },
+      { href: "/courses", icon: BookOpen, label: "Course Catalogue" },
+      { href: "/learner/browse", icon: BookOpen, label: "Browse (Auth)" },
       { href: "/learner/certificates", icon: FileText, label: "Certificates" },
     ]
   }
