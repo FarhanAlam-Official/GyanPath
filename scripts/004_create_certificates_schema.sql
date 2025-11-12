@@ -48,7 +48,7 @@ BEGIN
   FROM lesson_progress
   WHERE user_id = p_user_id
   AND lesson_id IN (SELECT id FROM lessons WHERE course_id = p_course_id)
-  AND completed = true;
+  AND is_completed = true;
   
   -- Count total quizzes
   SELECT COUNT(*) INTO total_quizzes
