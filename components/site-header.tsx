@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Menu, X, LogOut, Home, BookOpen } from "lucide-react"
+import { Menu, X, LogOut, Home, BookOpen, Sparkles, Puzzle, Info, Phone } from "lucide-react"
 import { useState } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { usePathname, useRouter } from "next/navigation"
@@ -58,10 +58,10 @@ export function SiteHeader() {
   const navItems = [
     { href: "/", label: "Home", icon: Home },
     { href: "/courses", label: "Courses", icon: BookOpen },
-    { href: "/features", label: "Features" },
-    { href: "/how-it-works", label: "How It Works" },
-    { href: "/about", label: "About" },
-    { href: "/contact", label: "Contact" },
+    { href: "/features", label: "Features", icon: Sparkles },
+    { href: "/how-it-works", label: "How It Works", icon: Puzzle },
+    { href: "/about", label: "About", icon: Info },
+    { href: "/contact", label: "Contact", icon: Phone },
   ]
 
   return (
@@ -69,8 +69,8 @@ export function SiteHeader() {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <motion.div 
-            whileHover={{ scale: 1.05 }} 
+          <motion.div
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
@@ -99,7 +99,8 @@ export function SiteHeader() {
           {/* Desktop Navigation - Moved to right side */}
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => {
-              const isActive = item.href === "/" ? pathname === "/" : pathname?.startsWith(item.href)
+              const isActive =
+                item.href === "/" ? pathname === "/" : pathname?.startsWith(item.href)
               const Icon = item.icon
               return (
                 <Link
@@ -112,7 +113,9 @@ export function SiteHeader() {
                   }`}
                 >
                   <div className="flex items-center gap-2 text-sm font-medium">
-                    {Icon ? <Icon className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" /> : null}
+                    {Icon ? (
+                      <Icon className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />
+                    ) : null}
                     <span>{item.label}</span>
                   </div>
                   {isActive && (
@@ -141,18 +144,21 @@ export function SiteHeader() {
             ) : user && profile ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <motion.button 
+                  <motion.button
                     className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-all duration-300 group"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <Avatar className="w-8 h-8 ring-2 ring-transparent group-hover:ring-indigo-600 transition-all duration-300">
-                      <AvatarImage src={profile.avatar_url || ""} alt={profile.full_name || "User"} />
+                      <AvatarImage
+                        src={profile.avatar_url || ""}
+                        alt={profile.full_name || "User"}
+                      />
                       <AvatarFallback className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white text-sm">
                         {getUserInitials()}
                       </AvatarFallback>
                     </Avatar>
-                    <motion.span 
+                    <motion.span
                       className="text-sm font-medium max-w-[120px] truncate hidden md:block"
                       whileHover={{ x: 2 }}
                     >
@@ -160,23 +166,23 @@ export function SiteHeader() {
                     </motion.span>
                   </motion.button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="end" 
+                <DropdownMenuContent
+                  align="end"
                   className="w-56 overflow-hidden rounded-xl shadow-lg"
                   sideOffset={5}
                 >
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{profile.full_name || user.email}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
+                      <p className="text-sm font-medium leading-none">
+                        {profile.full_name || user.email}
                       </p>
+                      <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href={getDashboardPath()}>
-                      <motion.div 
+                      <motion.div
                         className="w-full"
                         whileHover={{ x: 5 }}
                         transition={{ type: "spring", stiffness: 500 }}
@@ -187,7 +193,7 @@ export function SiteHeader() {
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href={`${getDashboardPath()}/profile`}>
-                      <motion.div 
+                      <motion.div
                         className="w-full"
                         whileHover={{ x: 5 }}
                         transition={{ type: "spring", stiffness: 500 }}
@@ -197,8 +203,8 @@ export function SiteHeader() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={handleSignOut} 
+                  <DropdownMenuItem
+                    onClick={handleSignOut}
                     className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
@@ -208,27 +214,27 @@ export function SiteHeader() {
               </DropdownMenu>
             ) : (
               <div className="hidden md:flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  asChild 
+                <Button
+                  variant="ghost"
+                  asChild
                   className="text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-300 rounded-lg px-3.5 py-2 text-sm font-medium"
                 >
                   <Link href="/auth/login">Sign In</Link>
                 </Button>
-                <Button 
-                  asChild 
+                <Button
+                  asChild
                   className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white transition-all duration-500 transform hover:scale-105 hover:shadow-lg rounded-lg px-4 py-2 text-sm font-medium shadow-sm"
                 >
                   <Link href="/auth/signup">Get Started</Link>
                 </Button>
               </div>
             )}
-            
+
             {/* Mobile Menu */}
             <div className="md:hidden flex items-center gap-2">
-              <motion.button 
+              <motion.button
                 className="p-2 rounded-lg hover:bg-muted transition-colors"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 aria-label="Toggle menu"
                 whileTap={{ scale: 0.9 }}
               >
@@ -241,7 +247,7 @@ export function SiteHeader() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <motion.div 
+        <motion.div
           className="md:hidden border-t bg-background"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
@@ -250,7 +256,8 @@ export function SiteHeader() {
         >
           <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
             {navItems.map((item) => {
-              const isActive = item.href === "/" ? pathname === "/" : pathname?.startsWith(item.href)
+              const isActive =
+                item.href === "/" ? pathname === "/" : pathname?.startsWith(item.href)
               const Icon = item.icon
               return (
                 <Link
@@ -270,7 +277,7 @@ export function SiteHeader() {
                 </Link>
               )
             })}
-            
+
             <div className="flex flex-col gap-2 pt-2 border-t mt-2">
               {loading ? (
                 // Show minimal loading indicator
@@ -282,7 +289,10 @@ export function SiteHeader() {
                 <>
                   <div className="flex items-center gap-2 px-2 py-2">
                     <Avatar className="w-8 h-8">
-                      <AvatarImage src={profile.avatar_url || ""} alt={profile.full_name || "User"} />
+                      <AvatarImage
+                        src={profile.avatar_url || ""}
+                        alt={profile.full_name || "User"}
+                      />
                       <AvatarFallback className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white text-sm">
                         {getUserInitials()}
                       </AvatarFallback>
@@ -298,7 +308,10 @@ export function SiteHeader() {
                     </Link>
                   </Button>
                   <Button asChild variant="ghost" size="sm" className="justify-start">
-                    <Link href={`${getDashboardPath()}/profile`} onClick={() => setMobileMenuOpen(false)}>
+                    <Link
+                      href={`${getDashboardPath()}/profile`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
                       Profile
                     </Link>
                   </Button>
@@ -317,14 +330,23 @@ export function SiteHeader() {
                 </>
               ) : (
                 <div className="flex flex-col gap-2">
-                  <Button asChild variant="ghost" size="sm" className="justify-start text-slate-600 hover:text-indigo-600 hover:bg-indigo-50">
-                    <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start text-slate-600 hover:text-indigo-600 hover:bg-indigo-50"
+                  >
+                    <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
+                      Sign In
+                    </Link>
                   </Button>
-                  <Button 
-                    asChild 
+                  <Button
+                    asChild
                     className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white transition-all duration-500 transform hover:scale-105 hover:shadow-lg rounded-lg px-4 py-2 text-sm font-medium shadow-sm"
                   >
-                    <Link href="/auth/signup" onClick={() => setMobileMenuOpen(false)}>Get Started</Link>
+                    <Link href="/auth/signup" onClick={() => setMobileMenuOpen(false)}>
+                      Get Started
+                    </Link>
                   </Button>
                 </div>
               )}
