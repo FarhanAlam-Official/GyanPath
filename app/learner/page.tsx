@@ -96,9 +96,14 @@ export default async function LearnerDashboard() {
               <div className="text-center py-8">
                 <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground mb-4">Discover courses that match your interests</p>
-                <Button asChild variant="outline">
-                  <Link href="/learner/browse">Browse All Courses</Link>
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button asChild className="bg-[#7752FE] hover:bg-[#190482]">
+                    <Link href="/courses">Browse Course Catalogue</Link>
+                  </Button>
+                  <Button asChild variant="outline">
+                    <Link href="/learner/browse">My Browse (Authenticated)</Link>
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

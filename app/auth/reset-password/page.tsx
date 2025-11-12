@@ -103,17 +103,8 @@ export default function ResetPasswordPage() {
           type = hashParams.get('type')
         }
 
-        console.log('[RESET PASSWORD] URL analysis:', {
-          hasHash: !!hash,
-          hasAccessToken: !!accessToken,
-          hasRefreshToken: !!refreshToken,
-          type,
-          hasCode: !!code
-        })
-
         // If we have hash parameters with tokens, use setSession (standard approach)
         if (accessToken && refreshToken && type === 'recovery') {
-          console.log('[RESET PASSWORD] Found hash tokens, setting session...')
           
           try {
             const { data, error } = await supabase.auth.setSession({
@@ -122,7 +113,6 @@ export default function ResetPasswordPage() {
             })
 
             if (error) {
-              console.error('[RESET PASSWORD] setSession error:', error)
               clearTimeout(validationTimeoutRef.current!)
               setIsValidToken(false)
               setIsValidating(false)
@@ -134,7 +124,6 @@ export default function ResetPasswordPage() {
             }
 
             if (data?.session?.user) {
-              console.log('[RESET PASSWORD] Session established successfully')
               clearTimeout(validationTimeoutRef.current!)
               setIsValidToken(true)
               setIsValidating(false)
@@ -158,7 +147,6 @@ export default function ResetPasswordPage() {
         }
         // If we have a code parameter, exchange it for a session
         else if (code) {
-          console.log('[RESET PASSWORD] Found code parameter, exchanging for session...')
           
           try {
             const { data, error } = await supabase.auth.exchangeCodeForSession(code)
@@ -176,7 +164,6 @@ export default function ResetPasswordPage() {
             }
 
             if (data?.session?.user) {
-              console.log('[RESET PASSWORD] Code exchanged successfully, session established')
               clearTimeout(validationTimeoutRef.current!)
               setIsValidToken(true)
               setIsValidating(false)
@@ -189,7 +176,7 @@ export default function ResetPasswordPage() {
               throw new Error('Code exchanged but no session found')
             }
           } catch (exchangeError) {
-            console.error('[RESET PASSWORD] Exchange error:', exchangeError)
+            console.error('[RESET PASSWORD] Code exchange error:', exchangeError);
             clearTimeout(validationTimeoutRef.current!)
             setIsValidToken(false)
             setIsValidating(false)
@@ -202,12 +189,10 @@ export default function ResetPasswordPage() {
         }
         // Check if we already have a valid session (user might have already set session)
         else {
-          console.log('[RESET PASSWORD] No tokens found, checking existing session...')
           try {
             const { data: { session }, error } = await supabase.auth.getSession()
             
             if (session?.user && !error) {
-              console.log('[RESET PASSWORD] Valid session found')
               clearTimeout(validationTimeoutRef.current!)
               setIsValidToken(true)
               setIsValidating(false)
@@ -247,7 +232,7 @@ export default function ResetPasswordPage() {
         clearTimeout(validationTimeoutRef.current)
       }
     }
-  }, []) // Empty dependency array - only run once on mount
+  }, [isValidating]) // Empty dependency array - only run once on mount
 
   /**
    * Handle form submission

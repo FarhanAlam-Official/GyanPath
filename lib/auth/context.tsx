@@ -64,7 +64,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         return data as UserProfile
-      } catch (error) {
+      } catch {
         return null
       }
     },
