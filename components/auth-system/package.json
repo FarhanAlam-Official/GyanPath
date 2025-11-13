@@ -1,0 +1,81 @@
+{
+  "name": "reusable-auth-system",
+  "version": "1.0.0",
+  "description": "A comprehensive, reusable authentication system built with Next.js, Supabase, and TypeScript",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint . --ext .ts,.tsx",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "authentication",
+    "nextjs",
+    "supabase",
+    "typescript",
+    "react",
+    "auth",
+    "reusable",
+    "component-library"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.46.1",
+    "next": "^15.0.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-hook-form": "^7.53.0",
+    "@hookform/resolvers": "^3.9.1",
+    "zod": "^3.23.0",
+    "lucide-react": "^0.454.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.6.0",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0"
+  },
+  "peerDependencies": {
+    "next": ">=14.0.0",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/reusable-auth-system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/reusable-auth-system/issues"
+  },
+  "homepage": "https://github.com/yourusername/reusable-auth-system#readme",
+  "files": [
+    "components/**/*",
+    "lib/**/*",
+    "pages/**/*",
+    "types/**/*",
+    "hooks/**/*",
+    "database/**/*",
+    "middleware.ts",
+    "README.md",
+    "INTEGRATION.md",
+    ".env.example"
+  ],
+  "exports": {
+    "./components/*": "./components/*",
+    "./lib/*": "./lib/*",
+    "./pages/*": "./pages/*",
+    "./types": "./types/index.ts",
+    "./hooks/*": "./hooks/*",
+    "./middleware": "./middleware.ts"
+  }
+}
