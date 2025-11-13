@@ -39,6 +39,17 @@ export interface OfflineQueueItem {
   retries: number
 }
 
+export interface OfflineCourse {
+  id: string
+  title: string
+  titleNe?: string
+  description?: string
+  descriptionNe?: string
+  thumbnailUrl?: string
+  instructorId: string
+  cachedAt: string
+}
+
 class IndexedDBManager {
   private db: IDBDatabase | null = null
 
@@ -91,6 +102,11 @@ class IndexedDBManager {
         if (!db.objectStoreNames.contains("cache")) {
           db.createObjectStore("cache", { keyPath: "url" })
         }
+
+        if (!db.objectStoreNames.contains("courses")) {
+          const courseStore = db.createObjectStore("courses", { keyPath: "id" })
+          courseStore.createIndex("cachedAt", "cachedAt", { unique: false })
+        }
       }
     })
   }
@@ -131,6 +147,43 @@ class IndexedDBManager {
     const transaction = db.transaction("lessons", "readwrite")
     const store = transaction.objectStore("lessons")
     await store.delete(lessonId)
+  }
+
+  async getAllLessons(): Promise<OfflineLesson[]> {
+    const db = await this.init()
+    const transaction = db.transaction("lessons", "readonly")
+    const store = transaction.objectStore("lessons")
+    return new Promise((resolve, reject) => {
+      const request = store.getAll()
+      request.onsuccess = () => resolve(request.result || [])
+      request.onerror = () => reject(request.error)
+    })
+  }
+
+  // Course operations
+  async saveCourse(course: OfflineCourse): Promise<void> {
+    const db = await this.init()
+    const transaction = db.transaction("courses", "readwrite")
+    const store = transaction.objectStore("courses")
+    await store.put(course)
+  }
+
+  async getCourse(courseId: string): Promise<OfflineCourse | null> {
+    const db = await this.init()
+    const transaction = db.transaction("courses", "readonly")
+    const store = transaction.objectStore("courses")
+    return new Promise((resolve, reject) => {
+      const request = store.get(courseId)
+      request.onsuccess = () => resolve(request.result || null)
+      request.onerror = () => reject(request.error)
+    })
+  }
+
+  async deleteCourse(courseId: string): Promise<void> {
+    const db = await this.init()
+    const transaction = db.transaction("courses", "readwrite")
+    const store = transaction.objectStore("courses")
+    await store.delete(courseId)
   }
 
   // Progress operations

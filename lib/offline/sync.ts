@@ -108,9 +108,12 @@ class SyncManager {
         // Handle quiz attempt sync
         const quizData = item.data as {
           quiz_id: string
+          user_id: string
           score: number
           total_questions: number
           passed: boolean
+          time_taken_seconds: number
+          started_at: string | null
           answers: Array<{
             question_id: string
             selected_option_id?: string
@@ -118,29 +121,41 @@ class SyncManager {
           }>
         }
 
+        // Calculate retry cooldown (simplified - would need quiz data)
+        const canRetryAfter = null // Would need quiz settings to calculate this
+
         const { data: attempt, error: attemptError } = await supabase
           .from("quiz_attempts")
           .insert({
             quiz_id: quizData.quiz_id,
+            user_id: quizData.user_id,
             score: quizData.score,
             total_questions: quizData.total_questions,
             passed: quizData.passed,
+            time_taken_seconds: quizData.time_taken_seconds,
+            started_at: quizData.started_at,
+            can_retry_after: canRetryAfter,
           })
           .select()
           .single()
 
         if (attemptError) {
+          console.error("Failed to sync quiz attempt:", attemptError)
           return false
         }
 
         // Save answers
         for (const answer of quizData.answers) {
-          await supabase.from("quiz_answers").insert({
+          const { error: answerError } = await supabase.from("quiz_answers").insert({
             attempt_id: attempt.id,
             question_id: answer.question_id,
             selected_option_id: answer.selected_option_id,
             is_correct: answer.is_correct,
           })
+
+          if (answerError) {
+            console.error("Failed to sync quiz answer:", answerError)
+          }
         }
 
         return true
