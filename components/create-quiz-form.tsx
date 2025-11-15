@@ -10,10 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
 import { Plus, Trash2, Check } from "lucide-react"
 
 interface Question {
   question_text: string
+  explanation?: string
   options: { option_text: string; is_correct: boolean }[]
 }
 
@@ -26,9 +28,15 @@ export function CreateQuizForm({ lessonId, courseId }: { lessonId: string; cours
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [passingScore, setPassingScore] = useState("70")
+  const [timeLimit, setTimeLimit] = useState("")
+  const [shuffleQuestions, setShuffleQuestions] = useState(false)
+  const [allowRetry, setAllowRetry] = useState(true)
+  const [retryCooldown, setRetryCooldown] = useState("24")
+  const [showExplanations, setShowExplanations] = useState(true)
   const [questions, setQuestions] = useState<Question[]>([
     {
       question_text: "",
+      explanation: "",
       options: [
         { option_text: "", is_correct: false },
         { option_text: "", is_correct: false },
@@ -41,6 +49,7 @@ export function CreateQuizForm({ lessonId, courseId }: { lessonId: string; cours
       ...questions,
       {
         question_text: "",
+        explanation: "",
         options: [
           { option_text: "", is_correct: false },
           { option_text: "", is_correct: false },
@@ -56,6 +65,12 @@ export function CreateQuizForm({ lessonId, courseId }: { lessonId: string; cours
   const updateQuestion = (index: number, text: string) => {
     const updated = [...questions]
     updated[index].question_text = text
+    setQuestions(updated)
+  }
+
+  const updateQuestionExplanation = (index: number, explanation: string) => {
+    const updated = [...questions]
+    updated[index].explanation = explanation
     setQuestions(updated)
   }
 
@@ -108,6 +123,11 @@ export function CreateQuizForm({ lessonId, courseId }: { lessonId: string; cours
           title,
           description: description || null,
           passing_score: Number.parseInt(passingScore),
+          time_limit_minutes: timeLimit ? Number.parseInt(timeLimit) : null,
+          shuffle_questions: shuffleQuestions,
+          allow_retry: allowRetry,
+          retry_cooldown_hours: allowRetry ? Number.parseInt(retryCooldown) : null,
+          show_explanations: showExplanations,
           is_published: false,
         })
         .select()
@@ -124,6 +144,7 @@ export function CreateQuizForm({ lessonId, courseId }: { lessonId: string; cours
           .insert({
             quiz_id: quiz.id,
             question_text: question.question_text,
+            explanation: question.explanation || null,
             question_type: "multiple_choice",
             order_index: i + 1,
           })
@@ -196,6 +217,55 @@ export function CreateQuizForm({ lessonId, courseId }: { lessonId: string; cours
               onChange={(e) => setPassingScore(e.target.value)}
             />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="timeLimit">Time Limit (minutes, optional)</Label>
+            <Input
+              id="timeLimit"
+              type="number"
+              min="1"
+              value={timeLimit}
+              onChange={(e) => setTimeLimit(e.target.value)}
+              placeholder="No time limit"
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="shuffle">Shuffle Questions</Label>
+              <p className="text-sm text-muted-foreground">Randomize question order for each attempt</p>
+            </div>
+            <Switch id="shuffle" checked={shuffleQuestions} onCheckedChange={setShuffleQuestions} />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="allowRetry">Allow Retry</Label>
+              <p className="text-sm text-muted-foreground">Let learners retake the quiz</p>
+            </div>
+            <Switch id="allowRetry" checked={allowRetry} onCheckedChange={setAllowRetry} />
+          </div>
+
+          {allowRetry && (
+            <div className="space-y-2">
+              <Label htmlFor="cooldown">Retry Cooldown (hours)</Label>
+              <Input
+                id="cooldown"
+                type="number"
+                min="0"
+                value={retryCooldown}
+                onChange={(e) => setRetryCooldown(e.target.value)}
+              />
+            </div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="showExplanations">Show Explanations</Label>
+              <p className="text-sm text-muted-foreground">Display explanations after quiz completion</p>
+            </div>
+            <Switch id="showExplanations" checked={showExplanations} onCheckedChange={setShowExplanations} />
+          </div>
         </CardContent>
       </Card>
 
@@ -221,6 +291,17 @@ export function CreateQuizForm({ lessonId, courseId }: { lessonId: string; cours
                 placeholder="Enter your question..."
                 rows={2}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Explanation (optional)</Label>
+              <Textarea
+                value={question.explanation || ""}
+                onChange={(e) => updateQuestionExplanation(qIndex, e.target.value)}
+                placeholder="Explain the correct answer..."
+                rows={2}
+              />
+              <p className="text-xs text-muted-foreground">This will be shown to learners after they complete the quiz</p>
             </div>
 
             <div className="space-y-3">

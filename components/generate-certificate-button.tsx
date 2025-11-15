@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Award, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/lib/utils/toast"
 
 interface GenerateCertificateButtonProps {
   courseId: string
@@ -17,11 +17,10 @@ export function GenerateCertificateButton({ courseId, isCompleted }: GenerateCer
 
   const handleGenerate = async () => {
     if (!isCompleted) {
-      toast({
-        title: "Course not completed",
-        description: "Complete all lessons and pass all quizzes to earn your certificate.",
-        variant: "destructive",
-      })
+      toast.error(
+        "Course not completed",
+        "Complete all lessons and pass all quizzes to earn your certificate."
+      )
       return
     }
 
@@ -44,18 +43,13 @@ export function GenerateCertificateButton({ courseId, isCompleted }: GenerateCer
         throw new Error(data.error || "Failed to generate certificate")
       }
 
-      toast({
-        title: "Certificate generated!",
-        description: "Your certificate is ready to download.",
-      })
-
+      toast.success("Certificate generated!", "Your certificate is ready to download.")
       router.push(`/learner/certificates/${data.certificate.id}`)
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate certificate",
-        variant: "destructive",
-      })
+      toast.error(
+        "Error",
+        error instanceof Error ? error.message : "Failed to generate certificate"
+      )
     } finally {
       setIsGenerating(false)
     }

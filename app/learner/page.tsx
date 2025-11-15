@@ -1,37 +1,62 @@
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+import { createServerClient } from "@/lib/supabase/server"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { AnalyticsUserStats } from "@/components/analytics-user-stats"
+import { CourseRecommendations } from "@/components/course-recommendations"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BookOpen, Award, TrendingUp, Clock } from "lucide-react"
+import { BookOpen } from "lucide-react"
 import Link from "next/link"
 
 export default async function LearnerDashboard() {
-  const supabase = await createClient()
+  // eslint-disable-next-line no-console
+  console.log("[LEARNER PAGE] Starting to render learner dashboard")
+  const supabase = await createServerClient()
 
+  // eslint-disable-next-line no-console
+  console.log("[LEARNER PAGE] Getting user from server client...")
   const {
     data: { user },
   } = await supabase.auth.getUser()
+  
+  // eslint-disable-next-line no-console
+  console.log("[LEARNER PAGE] User check result:", { hasUser: !!user, userId: user?.id })
+  
   if (!user) {
+    // eslint-disable-next-line no-console
+    console.log("[LEARNER PAGE] No user found, redirecting to login")
     redirect("/auth/login")
   }
 
+  // eslint-disable-next-line no-console
+  console.log("[LEARNER PAGE] Fetching user profile...")
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+  // eslint-disable-next-line no-console
+  console.log("[LEARNER PAGE] Profile result:", { hasProfile: !!profile, role: profile?.role })
 
   if (!profile || profile.role !== "learner") {
+    // eslint-disable-next-line no-console
+    console.log("[LEARNER PAGE] Invalid profile or role, redirecting to login")
     redirect("/auth/login")
   }
 
+  // eslint-disable-next-line no-console
+  console.log("[LEARNER PAGE] Fetching enrollment count...")
   const { count: enrolledCount } = await supabase
     .from("course_enrollments")
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id)
 
-  const { count: completedCount } = await supabase
+  // Get enrolled course IDs for recommendations component
+  const { data: enrollments } = await supabase
     .from("course_enrollments")
-    .select("*", { count: "exact", head: true })
+    .select("course_id")
     .eq("user_id", user.id)
-    .not("completed_at", "is", null)
+
+  const enrolledCourseIds = enrollments?.map((e) => e.course_id) || []
+  
+  // eslint-disable-next-line no-console
+  console.log("[LEARNER PAGE] Rendering dashboard with data:", { enrolledCount, enrolledCourseIds: enrolledCourseIds.length })
 
   return (
     <DashboardLayout role="learner" userName={profile.full_name}>
@@ -42,53 +67,7 @@ export default async function LearnerDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid md:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Enrolled Courses</CardTitle>
-              <BookOpen className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#7752FE]">{enrolledCount || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">Active courses</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
-              <Award className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#7752FE]">{completedCount || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">Courses finished</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Progress</CardTitle>
-              <TrendingUp className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#7752FE]">
-                {enrolledCount ? Math.round(((completedCount || 0) / enrolledCount) * 100) : 0}%
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Overall completion</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Study Time</CardTitle>
-              <Clock className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[#7752FE]">0h</div>
-              <p className="text-xs text-muted-foreground mt-1">This week</p>
-            </CardContent>
-          </Card>
-        </div>
+        <AnalyticsUserStats />
 
         {/* Quick Actions */}
         <div className="grid md:grid-cols-2 gap-6">
@@ -117,13 +96,21 @@ export default async function LearnerDashboard() {
               <div className="text-center py-8">
                 <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground mb-4">Discover courses that match your interests</p>
-                <Button asChild variant="outline">
-                  <Link href="/learner/browse">Browse All Courses</Link>
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button asChild className="bg-[#7752FE] hover:bg-[#190482]">
+                    <Link href="/courses">Browse Course Catalogue</Link>
+                  </Button>
+                  <Button asChild variant="outline">
+                    <Link href="/learner/browse">My Browse (Authenticated)</Link>
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Course Recommendations */}
+        <CourseRecommendations userId={user.id} enrolledCourseIds={enrolledCourseIds} limit={6} />
       </div>
     </DashboardLayout>
   )

@@ -1,8 +1,11 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { BookOpen, Video, Award, Users, Download, CheckCircle, Globe, Wifi, ArrowRight, Star, Play } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 export default function HomePage() {
   return (
@@ -75,10 +78,12 @@ export default function HomePage() {
               </div>
               <div className="relative hidden lg:block">
                 <div className="relative w-full aspect-square">
-                  <img
+                  <Image
                     src="/students-learning-on-mobile-devices-in-rural-setti.jpg"
                     alt="Students learning"
-                    className="rounded-2xl shadow-2xl"
+                    fill
+                    className="rounded-2xl shadow-2xl object-cover"
+                    priority
                   />
                   <div className="absolute -bottom-6 -left-6 bg-white text-[#190482] p-6 rounded-xl shadow-xl">
                     <div className="flex items-center gap-3">

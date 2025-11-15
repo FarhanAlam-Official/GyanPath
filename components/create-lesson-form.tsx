@@ -10,6 +10,17 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { MediaLibrary } from "@/components/media-library"
+import { Upload } from "lucide-react"
+import { toast } from "@/lib/utils/toast"
 
 interface CreateLessonFormProps {
   courseId: string
@@ -29,6 +40,7 @@ export function CreateLessonForm({ courseId, nextOrderIndex }: CreateLessonFormP
     description_ne: "",
     video_url: "",
     video_duration_seconds: "",
+    pdf_url: "",
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,6 +59,7 @@ export function CreateLessonForm({ courseId, nextOrderIndex }: CreateLessonFormP
         video_duration_seconds: formData.video_duration_seconds
           ? Number.parseInt(formData.video_duration_seconds)
           : null,
+        pdf_url: formData.pdf_url || null,
         order_index: nextOrderIndex,
         is_published: false,
       })
@@ -108,28 +121,90 @@ export function CreateLessonForm({ courseId, nextOrderIndex }: CreateLessonFormP
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="video_url">Video URL</Label>
-            <Input
-              id="video_url"
-              type="url"
-              value={formData.video_url}
-              onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-              placeholder="https://example.com/video.mp4"
-            />
-            <p className="text-xs text-muted-foreground">Upload your video to Supabase Storage or provide a URL</p>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="video_url">Video URL</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="video_url"
+                  type="url"
+                  value={formData.video_url}
+                  onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                  placeholder="https://example.com/video.mp4"
+                />
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button type="button" variant="outline" size="icon">
+                      <Upload className="w-4 h-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Upload Video</DialogTitle>
+                      <DialogDescription>Upload a video file or paste a URL for your lesson video</DialogDescription>
+                    </DialogHeader>
+                    <MediaLibrary
+                      onFileSelect={(url, type) => {
+                        if (type === "video") {
+                          setFormData({ ...formData, video_url: url })
+                          toast.success("Video selected", "The video URL has been added to the form.")
+                        }
+                      }}
+                      selectedFileUrl={formData.video_url}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
+              <p className="text-xs text-muted-foreground">Upload your video to Supabase Storage or provide a URL</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="duration">Video Duration (seconds)</Label>
+              <Input
+                id="duration"
+                type="number"
+                min="1"
+                value={formData.video_duration_seconds}
+                onChange={(e) => setFormData({ ...formData, video_duration_seconds: e.target.value })}
+                placeholder="300"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="duration">Video Duration (seconds)</Label>
-            <Input
-              id="duration"
-              type="number"
-              min="1"
-              value={formData.video_duration_seconds}
-              onChange={(e) => setFormData({ ...formData, video_duration_seconds: e.target.value })}
-              placeholder="300"
-            />
+            <Label htmlFor="pdf_url">PDF URL</Label>
+            <div className="flex gap-2">
+              <Input
+                id="pdf_url"
+                type="url"
+                value={formData.pdf_url}
+                onChange={(e) => setFormData({ ...formData, pdf_url: e.target.value })}
+                placeholder="https://example.com/document.pdf"
+              />
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button type="button" variant="outline" size="icon">
+                    <Upload className="w-4 h-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Upload PDF</DialogTitle>
+                    <DialogDescription>Upload a PDF file or paste a URL for your lesson document</DialogDescription>
+                  </DialogHeader>
+                  <MediaLibrary
+                    onFileSelect={(url, type) => {
+                      if (type === "pdf") {
+                        setFormData({ ...formData, pdf_url: url })
+                        toast.success("PDF selected", "The PDF URL has been added to the form.")
+                      }
+                    }}
+                    selectedFileUrl={formData.pdf_url}
+                  />
+                </DialogContent>
+              </Dialog>
+            </div>
+            <p className="text-xs text-muted-foreground">Upload your PDF to Supabase Storage or provide a URL</p>
           </div>
 
           {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded">{error}</p>}

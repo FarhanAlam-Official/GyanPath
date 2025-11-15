@@ -1,112 +1,371 @@
 "use client"
 
-import type React from "react"
-
-import { createClient } from "@/lib/supabase/client"
+import { useState, useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { useAuth } from "@/hooks/use-auth"
+import { AuthLayout } from "@/components/auth/auth-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+import { PasswordInput } from "@/components/auth/password-input"
+import { SocialLoginButtons } from "@/components/auth/social-login-buttons"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { Loader2, LogIn, Mail, Lock, BookOpen, Award, Users } from "lucide-react"
+import { notifications } from "@/lib/notifications"
+import { cn } from "@/lib/utils"
 
+/**
+ * Login Form Schema
+ * Validates email format and ensures password is provided
+ */
+const loginSchema = z.object({
+  email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
+  password: z
+    .string()
+    .min(1, "Password is required")
+    .min(6, "Password must be at least 6 characters"),
+  rememberMe: z.boolean().default(false),
+})
+
+type LoginFormData = z.infer<typeof loginSchema>
+
+/**
+ * Login Page Component
+ *
+ * Enhanced login page with:
+ * - Form validation using Zod and react-hook-form
+ * - Password visibility toggle
+ * - Toast notifications for errors/success
+ * - Loading states with spinners
+ * - Smooth animations
+ * - Role-based redirect after successful login
+ * - Accessibility features (ARIA labels, keyboard navigation)
+ */
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
+  const { signIn, loading: authLoading, user, profile } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [rememberMe, setRememberMe] = useState(false)
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const supabase = createClient()
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: "onBlur", // Validate on blur for better UX
+    defaultValues: {
+      rememberMe: false,
+      email: "",
+    },
+  })
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && profile && !authLoading) {
+      // Redirect based on role
+      if (profile.role === "admin") {
+        window.location.href = "/admin"
+      } else if (profile.role === "instructor") {
+        window.location.href = "/instructor"
+      } else if (profile.role === "group_admin") {
+        window.location.href = "/group-admin"
+      } else {
+        window.location.href = "/learner"
+      }
+    }
+  }, [user, profile, authLoading])
+
+  // Load remembered email on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const rememberedEmail = localStorage.getItem("rememberedEmail")
+      const shouldRemember = localStorage.getItem("rememberMe") === "true"
+      if (rememberedEmail && shouldRemember) {
+        setValue("email", rememberedEmail)
+        setRememberMe(true)
+        setValue("rememberMe", true)
+      }
+    }
+  }, [setValue])
+
+  /**
+   * Handle form submission
+   * Authenticates user with Supabase and redirects based on role
+   */
+  const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
-    setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      if (error) throw error
+      // Use enhanced signIn from auth context
+      const result = await signIn(data.email, data.password, data.rememberMe)
 
-      // Get user profile to determine role-based redirect
-      const { data: profile } = await supabase.from("profiles").select("role").single()
-
-      // Redirect based on role
-      if (profile?.role === "admin") {
-        router.push("/admin")
-      } else if (profile?.role === "group_admin") {
-        router.push("/group-admin")
-      } else if (profile?.role === "instructor") {
-        router.push("/instructor")
-      } else {
-        router.push("/learner")
+      if (result.error) {
+        // Handle specific error types with user-friendly messages
+        if (result.error.type === "email_not_confirmed") {
+          notifications.showError({
+            title: "Email not verified",
+            description: "Please verify your email before signing in. Check your inbox for the verification link.",
+          })
+        } else if (result.error.type === "rate_limit") {
+          notifications.showError({
+            title: "Too many attempts",
+            description: result.error.message,
+          })
+        } else {
+          notifications.showError({
+            title: "Login failed",
+            description: result.error.message,
+          })
+        }
+        return
       }
+
+      // Show success toast
+      notifications.showSuccess({
+        title: "Welcome back!",
+        description: "Redirecting to your dashboard...",
+      })
+
+      // Wait for session to be fully established in cookies
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      // Use window.location for hard navigation to ensure cookies are sent
+      window.location.href = "/learner"
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+      // Handle unexpected errors
+      notifications.showError({
+        title: "An unexpected error occurred",
+        description: error instanceof Error ? error.message : "Please try again later.",
+      })
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-[#190482] via-[#7752FE] to-[#8E8FFA] p-6">
-      <div className="w-full max-w-sm">
-        <Card className="border-none shadow-2xl">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-3xl font-bold text-center text-[#190482]">GyanPath</CardTitle>
-            <CardDescription className="text-center">Sign in to your account</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin}>
-              <div className="flex flex-col gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="border-[#8E8FFA] focus:border-[#7752FE]"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="border-[#8E8FFA] focus:border-[#7752FE]"
-                  />
-                </div>
-                {error && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</p>}
-                <Button
-                  type="submit"
-                  className="w-full bg-[#7752FE] hover:bg-[#190482] transition-colors"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Signing in..." : "Sign In"}
-                </Button>
+    <AuthLayout>
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          {/* Left Side - Visual Content */}
+          <div className="hidden lg:block relative">
+            <div className="relative z-10 space-y-6">
+              <div className="space-y-4">
+                <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-[#190482] via-[#7752FE] to-[#8E8FFA] bg-clip-text text-transparent">
+                  Welcome Back to GyanPath
+                </h1>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Continue your learning journey with access to thousands of courses, offline
+                  learning, and expert instructors.
+                </p>
               </div>
-              <div className="mt-4 text-center text-sm">
-                Don&apos;t have an account?{" "}
-                <Link
-                  href="/auth/signup"
-                  className="text-[#7752FE] hover:text-[#190482] underline underline-offset-4 font-medium"
-                >
-                  Sign up
-                </Link>
+
+              {/* Feature List */}
+              <div className="space-y-4 pt-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <BookOpen className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">Offline Learning</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Access courses even without internet connection
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Award className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">Certified Courses</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Earn certificates upon course completion
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Users className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">Expert Instructors</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Learn from industry professionals
+                    </p>
+                  </div>
+                </div>
               </div>
-            </form>
-          </CardContent>
-        </Card>
+            </div>
+
+            {/* Decorative Elements */}
+            <div className="absolute -top-10 -left-10 w-72 h-72 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full blur-3xl -z-10" />
+            <div className="absolute -bottom-10 -right-10 w-96 h-96 bg-gradient-to-br from-[#8E8FFA]/20 to-[#7752FE]/5 rounded-full blur-3xl -z-10" />
+          </div>
+
+          {/* Right Side - Login Form */}
+          <div className="w-full">
+            <Card className="border-2 border-primary/10 shadow-2xl backdrop-blur-sm bg-card/95 dark:bg-card/90 overflow-hidden relative">
+              {/* Decorative gradient overlay */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#190482] via-[#7752FE] to-[#8E8FFA]" />
+
+              <CardHeader className="space-y-4 text-center pb-8 pt-8">
+                {/* Logo/Icon with enhanced design */}
+                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-[#190482] via-[#7752FE] to-[#8E8FFA] rounded-2xl flex items-center justify-center mb-2 shadow-lg shadow-primary/25">
+                  <LogIn className="w-8 h-8 text-white" />
+                </div>
+
+                <div className="space-y-2">
+                  <CardTitle className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                    Welcome Back
+                  </CardTitle>
+                  <CardDescription className="text-base">
+                    Sign in to continue your learning journey
+                  </CardDescription>
+                </div>
+              </CardHeader>
+
+              <CardContent className="pt-0 pb-8 px-6 sm:px-8">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                  {/* Email Input */}
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-semibold text-foreground">
+                      Email Address
+                    </Label>
+                    <div className="relative group">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="your@email.com"
+                        className={cn(
+                          "pl-11 h-12 text-base transition-all duration-200 border-2",
+                          "focus:ring-2 focus:ring-primary/20 focus:border-primary",
+                          "hover:border-primary/50",
+                          errors.email && "border-destructive focus:ring-destructive/20"
+                        )}
+                        aria-invalid={errors.email ? "true" : "false"}
+                        aria-describedby={errors.email ? "email-error" : undefined}
+                        disabled={isLoading}
+                        {...register("email")}
+                      />
+                    </div>
+                    {errors.email && (
+                      <p
+                        id="email-error"
+                        className="text-sm text-destructive flex items-center gap-1.5 mt-1.5"
+                        role="alert"
+                      >
+                        <span className="w-1 h-1 rounded-full bg-destructive" />
+                        {errors.email.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Password Input */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password" className="text-sm font-semibold text-foreground">
+                        Password
+                      </Label>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="rememberMe"
+                          checked={rememberMe}
+                          onCheckedChange={(checked) => {
+                            setRememberMe(checked === true)
+                            setValue("rememberMe", checked === true)
+                          }}
+                        />
+                        <Label
+                          htmlFor="rememberMe"
+                          className="text-sm font-normal text-muted-foreground hover:text-[#7752FE] cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Remember me
+                        </Label>
+                      </div>
+                    </div>
+                    <div className="relative group">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
+                      <PasswordInput
+                        id="password"
+                        placeholder="Enter your password"
+                        className={cn(
+                          "pl-11 h-12 text-base transition-all duration-200 border-2",
+                          "focus:ring-2 focus:ring-primary/20 focus:border-primary",
+                          "hover:border-primary/50",
+                          errors.password && "border-destructive focus:ring-destructive/20"
+                        )}
+                        aria-invalid={errors.password ? "true" : "false"}
+                        aria-describedby={errors.password ? "password-error" : undefined}
+                        disabled={isLoading}
+                        {...register("password")}
+                      />
+                    </div>
+                    {errors.password && (
+                      <p
+                        id="password-error"
+                        className="text-sm text-destructive flex items-center gap-1.5 mt-1.5"
+                        role="alert"
+                      >
+                        <span className="w-1 h-1 rounded-full bg-destructive" />
+                        {errors.password.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Forgot Password Link */}
+                  <div className="flex justify-end">
+                    <Link
+                      href="/auth/forgot-password"
+                      className="text-sm text-muted-foreground hover:text-[#7752FE] transition-colors font-medium"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+
+                  {/* Submit Button */}
+                  <Button
+                    type="submit"
+                    className="w-full h-12 text-base font-semibold bg-gradient-to-r from-[#190482] via-[#7752FE] to-[#8E8FFA] hover:from-[#190482]/90 hover:via-[#7752FE]/90 hover:to-[#8E8FFA]/90 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl shadow-primary/25 mt-6"
+                    disabled={isLoading || authLoading}
+                  >
+                    {isLoading || authLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="mr-2 h-5 w-5" />
+                        Sign In
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Social Login Buttons */}
+                  <SocialLoginButtons mode="sign_in" className="pt-4" />
+
+                  {/* Sign Up Link */}
+                  <div className="text-center text-sm pt-4 border-t border-border">
+                    <span className="text-muted-foreground">Don't have an account? </span>
+                    <Link
+                      href="/auth/signup"
+                      className="text-muted-foreground font-semibold hover:text-[#7752FE] transition-colors no-underline"
+                    >
+                      Create an account
+                    </Link>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
-    </div>
+    </AuthLayout>
   )
 }

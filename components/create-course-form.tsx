@@ -11,6 +11,17 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { MediaLibrary } from "@/components/media-library"
+import { Upload } from "lucide-react"
+import { toast } from "@/lib/utils/toast"
 
 export function CreateCourseForm() {
   const router = useRouter()
@@ -26,6 +37,7 @@ export function CreateCourseForm() {
     category: "",
     difficulty_level: "beginner" as const,
     estimated_duration_hours: "",
+    thumbnail_url: "",
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,6 +63,7 @@ export function CreateCourseForm() {
           estimated_duration_hours: formData.estimated_duration_hours
             ? Number.parseInt(formData.estimated_duration_hours)
             : null,
+          thumbnail_url: formData.thumbnail_url || null,
           instructor_id: user.id,
           is_published: false,
         })
@@ -145,16 +158,65 @@ export function CreateCourseForm() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="duration">Estimated Duration (hours)</Label>
-            <Input
-              id="duration"
-              type="number"
-              min="1"
-              value={formData.estimated_duration_hours}
-              onChange={(e) => setFormData({ ...formData, estimated_duration_hours: e.target.value })}
-              placeholder="10"
-            />
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="duration">Estimated Duration (hours)</Label>
+              <Input
+                id="duration"
+                type="number"
+                min="1"
+                value={formData.estimated_duration_hours}
+                onChange={(e) => setFormData({ ...formData, estimated_duration_hours: e.target.value })}
+                placeholder="10"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="thumbnail_url">Thumbnail URL</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="thumbnail_url"
+                  type="url"
+                  value={formData.thumbnail_url}
+                  onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
+                  placeholder="https://example.com/image.jpg"
+                />
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button type="button" variant="outline" size="icon">
+                      <Upload className="w-4 h-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Upload Thumbnail</DialogTitle>
+                      <DialogDescription>Upload an image or paste a URL for your course thumbnail</DialogDescription>
+                    </DialogHeader>
+                    <MediaLibrary
+                      onFileSelect={(url, type) => {
+                        if (type === "image") {
+                          setFormData({ ...formData, thumbnail_url: url })
+                          toast.success("Thumbnail selected", "The image URL has been added to the form.")
+                        }
+                      }}
+                      selectedFileUrl={formData.thumbnail_url}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
+              {formData.thumbnail_url && (
+                <div className="mt-2">
+                  <img
+                    src={formData.thumbnail_url}
+                    alt="Thumbnail preview"
+                    className="w-32 h-20 object-cover rounded border"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none"
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded">{error}</p>}

@@ -8,6 +8,10 @@ import { BookOpen, CheckCircle, Circle, Play } from "lucide-react"
 import Link from "next/link"
 import { DownloadLessonButton } from "@/components/download-lesson-button"
 import { GenerateCertificateButton } from "@/components/generate-certificate-button"
+import { CourseRating } from "@/components/course-rating"
+import { DiscussionForum } from "@/components/discussion-forum"
+import { AnnouncementBoard } from "@/components/announcement-board"
+import { CourseDownloadButton } from "@/components/course-download-button"
 import type { Lesson } from "@/lib/types"
 
 export default async function CourseViewPage({ params }: { params: Promise<{ courseId: string }> }) {
@@ -155,11 +159,7 @@ export default async function CourseViewPage({ params }: { params: Promise<{ cou
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <DownloadLessonButton
-                          lessonId={lesson.id}
-                          videoUrl={lesson.video_url}
-                          pdfUrl={lesson.pdf_url}
-                        />
+                        <DownloadLessonButton lessonId={lesson.id} courseId={courseId} />
                         {isCompleted ? (
                           <CheckCircle className="w-5 h-5 text-green-600" />
                         ) : (
@@ -184,6 +184,30 @@ export default async function CourseViewPage({ params }: { params: Promise<{ cou
             )}
           </CardContent>
         </Card>
+
+        {/* Course Download */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Offline Access</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CourseDownloadButton courseId={courseId} courseTitle={course.title} />
+          </CardContent>
+        </Card>
+
+        {/* Announcements */}
+        <AnnouncementBoard courseId={courseId} canCreate={false} />
+
+        {/* Discussion Forum */}
+        <DiscussionForum courseId={courseId} canCreate={false} />
+
+        {/* Course Ratings & Reviews */}
+        <CourseRating
+          courseId={courseId}
+          currentUserId={user.id}
+          averageRating={course.average_rating}
+          ratingsCount={course.ratings_count}
+        />
       </div>
     </DashboardLayout>
   )

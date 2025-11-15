@@ -5,17 +5,23 @@ import "./globals.css"
 
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
 import { OfflineIndicator } from "@/components/offline-indicator"
+import { ServiceWorkerRegister } from "@/components/service-worker-register"
+import { ThemeProvider } from "@/components/theme-provider"
+import { QueryProvider } from "@/components/providers/query-provider"
+import { AuthProvider } from "@/lib/auth/context"
+import { Toaster } from "@/components/ui/sonner"
 
-import { Inter, Geist, Geist_Mono, Source_Serif_4 } from 'next/font/google'
-
-// Initialize fonts
-const geist = Geist({ subsets: ['latin'], weight: ["100","200","300","400","500","600","700","800","900"] })
-const geistMono = Geist_Mono({ subsets: ['latin'], weight: ["100","200","300","400","500","600","700","800","900"] })
-const sourceSerif4 = Source_Serif_4({ subsets: ['latin'], weight: ["200","300","400","500","600","700","800","900"] })
+import { Inter, Noto_Sans_Devanagari } from "next/font/google"
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+})
+
+const notoSansDevanagari = Noto_Sans_Devanagari({
+  subsets: ["devanagari"],
+  variable: "--font-noto-devanagari",
+  weight: ["400", "500", "600", "700"],
 })
 
 export const metadata: Metadata = {
@@ -34,39 +40,34 @@ export const viewport: Viewport = {
   themeColor: "#7752FE",
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} antialiased`}>
+    <html lang="en" className={`${inter.variable} ${notoSansDevanagari.variable} antialiased`}>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icon-192.jpg" />
+        <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/favicon/android-chrome-192x192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/favicon/android-chrome-512x512.png" />
+        <link rel="shortcut icon" href="/favicon/favicon.ico" />
       </head>
       <body>
-        {children}
-        <PWAInstallPrompt />
-        <OfflineIndicator />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/sw.js').then(
-                    (registration) => {
-                      console.log('[v0] Service Worker registered:', registration);
-                    },
-                    (error) => {
-                      console.error('[v0] Service Worker registration failed:', error);
-                    }
-                  );
-                });
-              }
-            `,
-          }}
-        />
+        <QueryProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            <AuthProvider>
+              {children}
+              <PWAInstallPrompt />
+              <OfflineIndicator />
+              <ServiceWorkerRegister />
+              <Toaster />
+            </AuthProvider>
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   )

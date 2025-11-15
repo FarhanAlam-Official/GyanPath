@@ -1,69 +1,52 @@
 "use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Download, Check } from "lucide-react"
+import { Download, Check, Trash2 } from "lucide-react"
+import { useOfflineLesson } from "@/hooks/use-offline-lesson"
+import { toast } from "@/lib/utils/toast"
 
 interface DownloadLessonButtonProps {
   lessonId: string
-  videoUrl?: string
-  pdfUrl?: string
+  courseId: string
 }
 
-export function DownloadLessonButton({ lessonId, videoUrl, pdfUrl }: DownloadLessonButtonProps) {
-  const [isDownloading, setIsDownloading] = useState(false)
-  const [isDownloaded, setIsDownloaded] = useState(false)
+export function DownloadLessonButton({ lessonId, courseId }: DownloadLessonButtonProps) {
+  const { isCached, isCaching, cacheLesson, removeCachedLesson } = useOfflineLesson({
+    lessonId,
+    courseId,
+  })
 
   const handleDownload = async () => {
-    setIsDownloading(true)
-
     try {
-      const cache = await caches.open("gyanpath-v1")
-
-      // Download video
-      if (videoUrl) {
-        const videoResponse = await fetch(videoUrl)
-        await cache.put(videoUrl, videoResponse)
-      }
-
-      // Download PDF
-      if (pdfUrl) {
-        const pdfResponse = await fetch(pdfUrl)
-        await cache.put(pdfUrl, pdfResponse)
-      }
-
-      // Store lesson metadata
-      localStorage.setItem(`lesson-${lessonId}-downloaded`, "true")
-
-      setIsDownloaded(true)
+      await cacheLesson()
+      toast.success("Lesson cached", "This lesson is now available offline")
     } catch (error) {
-      console.error("[v0] Failed to download lesson:", error)
-    } finally {
-      setIsDownloading(false)
+      toast.error("Download failed", "Failed to cache lesson for offline access")
     }
   }
 
-  // Check if already downloaded
-  useState(() => {
-    const downloaded = localStorage.getItem(`lesson-${lessonId}-downloaded`)
-    if (downloaded) {
-      setIsDownloaded(true)
+  const handleRemove = async () => {
+    try {
+      await removeCachedLesson()
+      toast.success("Lesson removed", "Lesson has been removed from offline storage")
+    } catch (error) {
+      toast.error("Failed to remove", "Failed to remove lesson from offline storage")
     }
-  })
+  }
 
-  if (isDownloaded) {
+  if (isCached) {
     return (
-      <Button variant="outline" size="sm" disabled>
-        <Check className="w-4 h-4 mr-2" />
-        Downloaded
+      <Button onClick={handleRemove} variant="outline" size="sm">
+        <Trash2 className="w-4 h-4 mr-2" />
+        Remove from Offline
       </Button>
     )
   }
 
   return (
-    <Button onClick={handleDownload} disabled={isDownloading} variant="outline" size="sm">
+    <Button onClick={handleDownload} disabled={isCaching} variant="outline" size="sm">
       <Download className="w-4 h-4 mr-2" />
-      {isDownloading ? "Downloading..." : "Download for Offline"}
+      {isCaching ? "Caching..." : "Download for Offline"}
     </Button>
   )
 }
