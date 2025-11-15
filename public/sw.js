@@ -59,6 +59,12 @@ self.addEventListener("fetch", (event) => {
     return
   }
 
+  // Skip auth routes - let them always go to network (important for code exchange)
+  const url = new URL(event.request.url)
+  if (url.pathname.startsWith("/auth/") || url.pathname.startsWith("/api/auth/")) {
+    return
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
